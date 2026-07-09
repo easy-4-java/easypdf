@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>io.github.hiwepy</groupId>
 	<artifactId>itextpdf-template</artifactId>
-	<version>4.1.x.20260527-SNAPSHOT</version>
+	<version>1.0.x.20260630-SNAPSHOT</version>
 	<name>${project.groupId}:${project.artifactId}</name>
 	<description>Building doc documents based on xhtml templates using itextpdf</description>
 	<url>https://github.com/hiwepy/${project.artifactId}</url>

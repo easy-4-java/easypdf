@@ -32,8 +32,13 @@
 |------|------|
 | `easypdf-core` | 核心抽象、Docx4j/WML 工具 |
 | `easypdf-xhtml` | HTML/XHTML → WordprocessingMLPackage |
+| `easypdf-webmvc` | Spring MVC + iText 7 PDF View 集成 |
 | `easypdf-freemarker` / `velocity` / `beetl` / `thymeleaf` / … | 各模板引擎适配 |
 | `easypdf-bom` | 依赖 BOM |
+
+## fastpdf 合并说明
+
+`fastpdf-core` 中可复用的 iText/PDF 辅助代码已经归入 `easypdf-core`；本次继续迁入其 Spring MVC PDF View 能力，并升级为 iText 7 实现。Struts2 适配和 ICEpdf/PDFBox/Xpdf 占位模块不再迁移，详细取舍见 [fastpdf 合并审计](docs/fastpdf-migration.md)。
 
 ## 参考
 

@@ -59,6 +59,7 @@
 		<module>easypdf-rythm</module>
 		<module>easypdf-thymeleaf</module>
 		<module>easypdf-velocity</module>
+		<module>easypdf-webmvc</module>
 		<module>easypdf-webit</module>
 		<module>easypdf-xhtml</module>
 	</modules>
@@ -445,6 +446,7 @@
 		<rythm.version>1.3.0</rythm.version>
 		<servlet-api.version>3.0.1</servlet-api.version>
 		<slf4j.version>2.0.18</slf4j.version>
+		<spring-framework.version>5.3.39</spring-framework.version>
 		<thymeleaf.version>3.0.11.RELEASE</thymeleaf.version>
 		<velocity.version>2.2</velocity.version>
 		<velocity-tools.version>2.0</velocity-tools.version>
@@ -468,6 +470,18 @@
 				<groupId>javax.servlet</groupId>
 				<artifactId>javax.servlet-api</artifactId>
 				<version>${servlet-api.version}</version>
+			</dependency>
+
+			<!-- Spring MVC integration retained from fastpdf, on the javax.servlet line. -->
+			<dependency>
+				<groupId>org.springframework</groupId>
+				<artifactId>spring-webmvc</artifactId>
+				<version>${spring-framework.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework</groupId>
+				<artifactId>spring-test</artifactId>
+				<version>${spring-framework.version}</version>
 			</dependency>
 
 			<!-- ###################### Docx4j ###################### -->

@@ -1,0 +1,63 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>io.github.easy4j</groupId>
+		<artifactId>easypdf</artifactId>
+		<version>1.0.x.20260630-SNAPSHOT</version>
+	</parent>
+	<artifactId>easypdf-core</artifactId>
+	
+	<description>Building pdf documents using itextpdf</description>
+	<name>${project.groupId}:${project.artifactId}</name>
+	<packaging>jar</packaging>
+	
+	<dependencies>
+	
+		<dependency>
+			<groupId>javax.servlet</groupId>
+			<artifactId>javax.servlet-api</artifactId>
+			<scope>provided</scope>
+		</dependency>
+    	
+    	<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>commons-io</groupId>
+			<artifactId>commons-io</artifactId>
+		</dependency>
+		
+		<!-- ###################### itextpdf ###################### -->
+		
+		<!-- https://mvnrepository.com/artifact/com.itextpdf/kernel -->
+		<dependency>
+		    <groupId>com.itextpdf</groupId>
+		    <artifactId>kernel</artifactId>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/com.itextpdf/layout -->
+		<dependency>
+		    <groupId>com.itextpdf</groupId>
+		    <artifactId>layout</artifactId>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/com.itextpdf/forms -->
+		<dependency>
+		    <groupId>com.itextpdf</groupId>
+		    <artifactId>forms</artifactId>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/com.itextpdf/io -->
+		<dependency>
+		    <groupId>com.itextpdf</groupId>
+		    <artifactId>io</artifactId>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/com.itextpdf/html2pdf -->
+		<dependency>
+		    <groupId>com.itextpdf</groupId>
+		    <artifactId>html2pdf</artifactId>
+		</dependency>
+
+	</dependencies>
+	
+</project>

@@ -2,12 +2,12 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>io.github.hiwepy</groupId>
-	<artifactId>itextpdf-template</artifactId>
+	<groupId>io.github.easy4j</groupId>
+	<artifactId>easypdf</artifactId>
 	<version>1.0.x.20260630-SNAPSHOT</version>
 	<name>${project.groupId}:${project.artifactId}</name>
-	<description>Building doc documents based on xhtml templates using itextpdf</description>
-	<url>https://github.com/hiwepy/${project.artifactId}</url>
+	<description>Building Word/PDF documents based on XHTML templates using Docx4j and iText</description>
+	<url>https://github.com/easy-4-java/${project.artifactId}</url>
 	<packaging>pom</packaging>
 
 	<licenses>
@@ -18,9 +18,9 @@
 	</licenses>
 
 	<scm>
-		<connection>scm:git:https:github.com/hiwepy/${project.artifactId}.git</connection>
-		<developerConnection>scm:git:https:github.com/hiwepy/${project.artifactId}.git</developerConnection>
-		<url>https:github.com/hiwepy/${project.artifactId}</url>
+		<connection>scm:git:https://github.com/easy-4-java/${project.artifactId}.git</connection>
+		<developerConnection>scm:git:https://github.com/easy-4-java/${project.artifactId}.git</developerConnection>
+		<url>https://github.com/easy-4-java/${project.artifactId}</url>
 		<tag>${project.artifactId}</tag>
 	</scm>
 
@@ -49,18 +49,18 @@
 	</distributionManagement>
 
 	<modules>
-		<module>itextpdf-template-beetl</module>
-		<module>itextpdf-template-bom</module>
-		<module>itextpdf-template-core</module>
-		<module>itextpdf-template-freemarker</module>
-		<module>itextpdf-template-httl</module>
-		<module>itextpdf-template-jetbrick</module>
-		<module>itextpdf-template-jsp</module>
-		<module>itextpdf-template-rythm</module>
-		<module>itextpdf-template-thymeleaf</module>
-		<module>itextpdf-template-velocity</module>
-		<module>itextpdf-template-webit</module>
-		<module>itextpdf-template-xhtml</module>
+		<module>easypdf-beetl</module>
+		<module>easypdf-bom</module>
+		<module>easypdf-core</module>
+		<module>easypdf-freemarker</module>
+		<module>easypdf-httl</module>
+		<module>easypdf-jetbrick</module>
+		<module>easypdf-jsp</module>
+		<module>easypdf-rythm</module>
+		<module>easypdf-thymeleaf</module>
+		<module>easypdf-velocity</module>
+		<module>easypdf-webit</module>
+		<module>easypdf-xhtml</module>
 	</modules>
 
 	<build>
@@ -457,6 +457,11 @@
 			<dependency>
 				<groupId>jakarta.servlet</groupId>
 				<artifactId>jakarta.servlet-api</artifactId>
+			</dependency>
+			<dependency>
+				<groupId>javax.servlet</groupId>
+				<artifactId>javax.servlet-api</artifactId>
+				<version>${servlet-api.version}</version>
 			</dependency>
 
 			<!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-api -->

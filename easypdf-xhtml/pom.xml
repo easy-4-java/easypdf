@@ -1,0 +1,218 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>io.github.easy4j</groupId>
+		<artifactId>easypdf</artifactId>
+		<version>1.0.x.20260630-SNAPSHOT</version>
+	</parent>
+
+	<artifactId>easypdf-xhtml</artifactId>
+	<description>Building doc documents based on xhtml templates using itextpdf</description>
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<source>7</source>
+					<target>7</target>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+	<name>${project.groupId}:${project.artifactId}</name>
+	<packaging>jar</packaging>
+
+	<dependencies>
+
+		<dependency>
+			<groupId>javax.servlet</groupId>
+			<artifactId>javax.servlet-api</artifactId>
+			<scope>provided</scope>
+		</dependency>
+
+    	<dependency>
+			<groupId>${project.groupId}</groupId>
+			<artifactId>easypdf-core</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+
+		<!-- https://mvnrepository.com/artifact/net.sourceforge.cssparser/cssparser -->
+		<dependency>
+		    <groupId>net.sourceforge.cssparser</groupId>
+		    <artifactId>cssparser</artifactId>
+		    <version>0.9.27</version>
+		</dependency>
+
+		<!-- ###################### HTML、CSS 解析工具包###################### -->
+
+		<dependency>
+			<groupId>org.jsoup</groupId>
+			<artifactId>jsoup</artifactId>
+		</dependency>
+
+ 		<!-- https://mvnrepository.com/artifact/com.itextpdf/kernel -->
+		<dependency>
+		    <groupId>com.itextpdf</groupId>
+		    <artifactId>kernel</artifactId>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/com.itextpdf/barcodes -->
+		<dependency>
+		    <groupId>com.itextpdf</groupId>
+		    <artifactId>barcodes</artifactId>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/com.itextpdf/layout -->
+		<dependency>
+		    <groupId>com.itextpdf</groupId>
+		    <artifactId>layout</artifactId>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/com.itextpdf/forms -->
+		<dependency>
+		    <groupId>com.itextpdf</groupId>
+		    <artifactId>forms</artifactId>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/com.itextpdf/pdfa -->
+		<dependency>
+		    <groupId>com.itextpdf</groupId>
+		    <artifactId>pdfa</artifactId>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/com.itextpdf/io -->
+		<dependency>
+		    <groupId>com.itextpdf</groupId>
+		    <artifactId>io</artifactId>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/com.itextpdf/html2pdf -->
+		<dependency>
+		    <groupId>com.itextpdf</groupId>
+		    <artifactId>html2pdf</artifactId>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/com.itextpdf/itext-licensekey -->
+		<!-- <dependency>
+		    <groupId>com.itextpdf</groupId>
+		    <artifactId>itext-licensekey</artifactId>
+		</dependency> -->
+		<!-- https://mvnrepository.com/artifact/com.itextpdf/itext-licensekey-volume -->
+		<!-- <dependency>
+		    <groupId>com.itextpdf</groupId>
+		    <artifactId>itext-licensekey-volume</artifactId>
+		</dependency> -->
+		<!-- https://mvnrepository.com/artifact/com.itextpdf/sign -->
+		<dependency>
+		    <groupId>com.itextpdf</groupId>
+		    <artifactId>sign</artifactId>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/com.itextpdf/styled-xml-parser -->
+		<dependency>
+		    <groupId>com.itextpdf</groupId>
+		    <artifactId>styled-xml-parser</artifactId>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/com.itextpdf/svg -->
+		<dependency>
+		    <groupId>com.itextpdf</groupId>
+		    <artifactId>svg</artifactId>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/com.itextpdf/itext-rups -->
+		<!-- <dependency>
+		    <groupId>com.itextpdf</groupId>
+		    <artifactId>itext-rups</artifactId>
+		</dependency> -->
+		<!-- https://mvnrepository.com/artifact/com.itextpdf/typography -->
+		<!-- <dependency>
+		    <groupId>com.itextpdf</groupId>
+		    <artifactId>typography</artifactId>
+		</dependency> -->
+		<!-- https://mvnrepository.com/artifact/com.itextpdf/cleanup -->
+		<dependency>
+		    <groupId>com.itextpdf</groupId>
+		    <artifactId>cleanup</artifactId>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/com.itextpdf/xfa-itext-pdfa -->
+		<!-- <dependency>
+		    <groupId>com.itextpdf</groupId>
+		    <artifactId>xfa-itext-pdfa</artifactId>
+		</dependency> -->
+		<!-- https://mvnrepository.com/artifact/com.itextpdf/pdfxfa -->
+		<!-- <dependency>
+		    <groupId>com.itextpdf</groupId>
+		    <artifactId>pdfxfa</artifactId>
+		</dependency> -->
+		<!-- https://mvnrepository.com/artifact/com.itextpdf/hyph -->
+		<dependency>
+		    <groupId>com.itextpdf</groupId>
+		    <artifactId>hyph</artifactId>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/com.itextpdf/font-asian -->
+		<dependency>
+		    <groupId>com.itextpdf</groupId>
+		    <artifactId>font-asian</artifactId>
+		    <scope>test</scope>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/com.itextpdf/pdftest -->
+		<dependency>
+		    <groupId>com.itextpdf</groupId>
+		    <artifactId>pdftest</artifactId>
+		    <scope>test</scope>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/com.itextpdf.tool/xmlworker -->
+		<dependency>
+		    <groupId>com.itextpdf.tool</groupId>
+		    <artifactId>xmlworker</artifactId>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/com.itextpdf.tool/xfa-xmlworker -->
+		<!-- <dependency>
+		    <groupId>com.itextpdf.tool</groupId>
+		    <artifactId>xfa-xmlworker</artifactId>
+		</dependency> -->
+
+		<!-- https://mvnrepository.com/artifact/org.xhtmlrenderer/flying-saucer-pdf -->
+		<!--<dependency>
+			<groupId>org.xhtmlrenderer</groupId>
+			<artifactId>flying-saucer-pdf</artifactId>
+			<version>9.11.2</version>
+			<scope>test</scope>
+		</dependency>-->
+
+		<!-- For Image to pdf -->
+		<!-- https://mvnrepository.com/artifact/org.apache.pdfbox/pdfbox -->
+		<dependency>
+			<groupId>org.apache.pdfbox</groupId>
+			<artifactId>pdfbox</artifactId>
+			<version>3.0.3</version>
+		</dependency>
+		<!-- 该库进行HTML的解析 -->
+		<dependency>
+			<groupId>org.jsoup</groupId>
+			<artifactId>jsoup</artifactId>
+			<version>1.18.3</version>
+		</dependency>
+		<!-- 将HTML内容转换为PDF文档 -->
+		<!-- https://mvnrepository.com/artifact/com.openhtmltopdf/openhtmltopdf-pdfbox -->
+		<!-- https://mvnrepository.com/artifact/com.openhtmltopdf/openhtmltopdf-core -->
+		<!--<dependency>
+            <groupId>com.openhtmltopdf</groupId>
+            <artifactId>openhtmltopdf-core</artifactId>
+            <version>1.0.10</version>
+        </dependency>
+        <dependency>
+            <groupId>com.openhtmltopdf</groupId>
+            <artifactId>openhtmltopdf-pdfbox</artifactId>
+            <version>1.0.10</version>
+        </dependency>-->
+		<!-- https://mvnrepository.com/artifact/io.github.openhtmltopdf/openhtmltopdf-core -->
+		<dependency>
+			<groupId>io.github.openhtmltopdf</groupId>
+			<artifactId>openhtmltopdf-core</artifactId>
+			<version>1.1.24</version>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/io.github.openhtmltopdf/openhtmltopdf-pdfbox -->
+		<dependency>
+			<groupId>io.github.openhtmltopdf</groupId>
+			<artifactId>openhtmltopdf-pdfbox</artifactId>
+			<version>1.1.24</version>
+		</dependency>
+
+	</dependencies>
+
+</project>

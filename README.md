@@ -4,7 +4,7 @@
 
 - Maven: `io.github.easy4j:easypdf`
 - 仓库: https://github.com/easy-4-java/easypdf
-- 包名: `io.github.easy4j.easypdf.*`
+- 包名: `io.github.easy4j.pdf.*`
 
 ## 模块
 

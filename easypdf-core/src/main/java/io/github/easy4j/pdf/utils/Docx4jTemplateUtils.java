@@ -23,8 +23,6 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 import javax.servlet.http.HttpServletResponse;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
 
 import org.docx4j.XmlUtils;
 import org.docx4j.jaxb.Context;
@@ -109,7 +107,9 @@ public final class Docx4jTemplateUtils {
         Document document = documentPart.getContents();
         String wmlTemplate =
                 XmlUtils.marshaltoString(document, true, false, Context.jc);
-        document = (Document) XmlUtils.unwrap(DocxVariableClearUtils.doCleanDocumentPart(wmlTemplate, Context.jc));
+        // Context.jc 在 Docx4j 8.x 为 javax.xml.bind.JAXBContext，11.5+ 为 jakarta.xml.bind.JAXBContext；
+        // 此处不直接依赖 JAXB 类型，保证 1.0/2.0/3.0 源码一致。
+        document = (Document) XmlUtils.unwrap(DocxVariableClearUtils.doCleanDocumentPart(wmlTemplate));
         documentPart.setContents(document);
         return true;
     }
@@ -174,15 +174,14 @@ public final class Docx4jTemplateUtils {
         private static final int RIGHT_BRACE_STATUS = 3;
  
  
-        /*
-         * doCleanDocumentPart
+        /**
+         * 清理模板变量周围的多余 XML 标签，再按当前 Docx4j 的 JAXBContext 反序列化。
          *
-         * @param wmlTemplate
-         * @param jc
-         * @return
-         * @throws JAXBException
+         * @param wmlTemplate 原始 WML 字符串
+         * @return 反序列化后的文档对象
+         * @throws Exception 反序列化失败时抛出
          */
-        private static Object doCleanDocumentPart(String wmlTemplate, JAXBContext jc) throws JAXBException {
+        private static Object doCleanDocumentPart(String wmlTemplate) throws Exception {
             // 进入变量块位置
             int curStatus = NONE_START;
             // 开始位置
@@ -253,7 +252,7 @@ public final class Docx4jTemplateUtils {
             if (lastWriteIndex < documentBuilder.length()) {
                 newDocumentBuilder.append(documentBuilder.substring(lastWriteIndex));
             }
-            return XmlUtils.unmarshalString(newDocumentBuilder.toString(), jc);
+            return XmlUtils.unmarshalString(newDocumentBuilder.toString(), Context.jc);
         }
  
     }

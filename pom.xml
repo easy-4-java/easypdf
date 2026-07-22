@@ -424,10 +424,10 @@
 		<itext-cleanup.version>2.0.5</itext-cleanup.version>
 		<itext-html2pdf.version>2.1.7</itext-html2pdf.version>
 		<!-- Docx4j Core（JDK 8 线用 8.x；JDK 17/21 线用 11.x，扩展模块版本独立） -->
-		<docx4j.version>11.1.3</docx4j.version>
-		<docx4j-export-fo.version>8.1.4</docx4j-export-fo.version>
+		<docx4j.version>11.5.2</docx4j.version>
+		<docx4j-export-fo.version>11.5.2</docx4j-export-fo.version>
 		<!-- Docx4j ImportXHTML（与 core 版本线不一定相同） -->
-		<docx4j-importxhtml.version>8.0.0</docx4j-importxhtml.version>
+		<docx4j-importxhtml.version>11.4.8</docx4j-importxhtml.version>
 		<docx4j-xhtmlrenderer.version>3.0.0</docx4j-xhtmlrenderer.version>
 		<!-- Docx4j JAXB -->
 		<docx4j-jaxb.version>${docx4j.version}</docx4j-jaxb.version>

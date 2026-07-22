@@ -9,19 +9,7 @@
 	</parent>
 
 	<artifactId>easypdf-xhtml</artifactId>
-	<description>Building doc documents based on xhtml templates using itextpdf</description>
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<configuration>
-					<source>7</source>
-					<target>7</target>
-				</configuration>
-			</plugin>
-		</plugins>
-	</build>
+	<description>Building doc documents based on xhtml templates using Docx4j</description>
 	<name>${project.groupId}:${project.artifactId}</name>
 	<packaging>jar</packaging>
 
@@ -37,6 +25,11 @@
 			<groupId>${project.groupId}</groupId>
 			<artifactId>easypdf-core</artifactId>
 			<version>${project.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.docx4j</groupId>
+			<artifactId>docx4j-ImportXHTML</artifactId>
 		</dependency>
 
 		<!-- https://mvnrepository.com/artifact/net.sourceforge.cssparser/cssparser -->
@@ -181,11 +174,9 @@
 			<artifactId>pdfbox</artifactId>
 			<version>3.0.3</version>
 		</dependency>
-		<!-- 该库进行HTML的解析 -->
 		<dependency>
 			<groupId>org.jsoup</groupId>
 			<artifactId>jsoup</artifactId>
-			<version>1.18.3</version>
 		</dependency>
 		<!-- 将HTML内容转换为PDF文档 -->
 		<!-- https://mvnrepository.com/artifact/com.openhtmltopdf/openhtmltopdf-pdfbox -->

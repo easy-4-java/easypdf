@@ -45,13 +45,9 @@ public class XHTMLImporterUtils {
 			//创建html导入对象
 			//XHTMLImporterImpl xhtmlImporter = new XHTMLImporterImpl(wordMLPackage);
 			document.addAltChunk(AltChunkType.Xhtml, (fragment ? doc.body().html() : doc.html()) .getBytes(Charset.forName(charsetName)));
-			//document.addAltChunk(type, bytes, attachmentPoint)
-			//document.addAltChunk(type, is)
-			//document.addAltChunk(type, is, attachmentPoint)
-			WordprocessingMLPackage tempPackage = document.convertAltChunks();
-			
-			//返回处理后的WordprocessingMLPackage对象
-			return tempPackage;
+			// convertAltChunks mutates the package in place (returns void since Docx4j 8+)
+			document.convertAltChunks();
+			return wmlPackage;
 		}
 		
 		//创建html导入对象

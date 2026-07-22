@@ -8,20 +8,18 @@
 		<version>1.0.x.20260630-SNAPSHOT</version>
 	</parent>
 	<artifactId>easypdf-core</artifactId>
-	
-	<description>Building pdf documents using itextpdf</description>
+
+	<description>easypdf core: Docx4j/WML template utilities and PDF helpers</description>
 	<name>${project.groupId}:${project.artifactId}</name>
 	<packaging>jar</packaging>
-	
+
 	<dependencies>
-	
 		<dependency>
 			<groupId>javax.servlet</groupId>
 			<artifactId>javax.servlet-api</artifactId>
 			<scope>provided</scope>
 		</dependency>
-    	
-    	<dependency>
+		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-lang3</artifactId>
 		</dependency>
@@ -29,35 +27,45 @@
 			<groupId>commons-io</groupId>
 			<artifactId>commons-io</artifactId>
 		</dependency>
-		
-		<!-- ###################### itextpdf ###################### -->
-		
-		<!-- https://mvnrepository.com/artifact/com.itextpdf/kernel -->
 		<dependency>
-		    <groupId>com.itextpdf</groupId>
-		    <artifactId>kernel</artifactId>
-		</dependency>
-		<!-- https://mvnrepository.com/artifact/com.itextpdf/layout -->
-		<dependency>
-		    <groupId>com.itextpdf</groupId>
-		    <artifactId>layout</artifactId>
-		</dependency>
-		<!-- https://mvnrepository.com/artifact/com.itextpdf/forms -->
-		<dependency>
-		    <groupId>com.itextpdf</groupId>
-		    <artifactId>forms</artifactId>
-		</dependency>
-		<!-- https://mvnrepository.com/artifact/com.itextpdf/io -->
-		<dependency>
-		    <groupId>com.itextpdf</groupId>
-		    <artifactId>io</artifactId>
-		</dependency>
-		<!-- https://mvnrepository.com/artifact/com.itextpdf/html2pdf -->
-		<dependency>
-		    <groupId>com.itextpdf</groupId>
-		    <artifactId>html2pdf</artifactId>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
 		</dependency>
 
+		<!-- Docx4j -->
+		<dependency>
+			<groupId>org.docx4j</groupId>
+			<artifactId>docx4j-core</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.docx4j</groupId>
+			<artifactId>docx4j-JAXB-ReferenceImpl</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.docx4j</groupId>
+			<artifactId>docx4j-export-fo</artifactId>
+		</dependency>
 	</dependencies>
-	
+
+	<build>
+		<plugins>
+			<!--
+			  Legacy iText5/XML engine under io.github.easy4j.pdf.core depends on
+			  unavailable com.jeefw.fastkit/fastxml; keep sources in repo but skip compile.
+			-->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<excludes>
+						<exclude>**/pdf/core/**</exclude>
+					</excludes>
+					<testExcludes>
+						<exclude>**/*</exclude>
+					</testExcludes>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
 </project>

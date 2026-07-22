@@ -27,8 +27,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import javax.xml.bind.JAXBException;
-
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.docx4j.XmlUtils;
@@ -196,8 +194,16 @@ public class WMLPackageUtils {
         return null;  
     }  
     
-	public static void replaceTable(String[] placeholders, List<Map<String, String>> textToAdd,  
-            WordprocessingMLPackage template) throws Docx4JException, JAXBException {  
+	/**
+	 * 按占位符定位模板表，并按数据行复制填充后移除模板行。
+	 *
+	 * @param placeholders 表内占位符
+	 * @param textToAdd 待追加的行数据
+	 * @param template Word 包
+	 * @throws Docx4JException Docx4j 处理失败时抛出
+	 */
+	public static void replaceTable(String[] placeholders, List<Map<String, String>> textToAdd,
+            WordprocessingMLPackage template) throws Docx4JException {  
 	    List<Tbl> tables = getTargetElements(template.getMainDocumentPart(), Tbl.class);  
 	  
 	    // 1. find the table  

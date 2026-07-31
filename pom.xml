@@ -711,7 +711,6 @@
 			    <version>2.0.5</version>
 			</dependency>
 
-
 			<!-- beetl模板 -->
 			<!-- https://mvnrepository.com/artifact/com.ibeetl/beetl -->
 			<dependency>

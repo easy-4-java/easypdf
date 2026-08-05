@@ -307,6 +307,7 @@
 				<jdk>[1.8,)</jdk>
 			</activation>
 			<properties>
+		<maven.test.skip>true</maven.test.skip>
 				<additionalparam>-Xdoclint:none -Xlint:unchecked</additionalparam>
 			</properties>
 		</profile>

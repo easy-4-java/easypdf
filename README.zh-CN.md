@@ -2,6 +2,8 @@
 
 [English](./README.md) | [简体中文](./README.zh-CN.md)
 
+[![Java](https://img.shields.io/badge/Java-17-orange)](https://github.com/easy-4-java/easypdf) [![License](https://img.shields.io/badge/license-Apache%202.0-green)](./LICENSE)
+
 基于 docx4j / iText 与多种模板引擎，快速生成 Word / PDF 文档。支持从模板（Freemarker、Velocity、Thymeleaf、Beetl、Rythm、Jetbrick、HTTL、Webit、JSP）或直接由 XHTML 渲染 WordprocessingML 文档，核心模块同时提供基于 iText 的 PDF 支持。
 
 ## 目录

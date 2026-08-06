@@ -371,7 +371,9 @@
                 <maven.test.skip>true</maven.test.skip>
                 <additionalparam>-Xdoclint:none -Xlint:unchecked</additionalparam>
                 <jacoco-maven-plugin.version>0.8.15</jacoco-maven-plugin.version>
-            </properties>
+            
+		<itext-xmlworker.version>5.5.13.1</itext-xmlworker.version>
+		<itext-xfa-xmlworker.version>2.0.5</itext-xfa-xmlworker.version></properties>
         </profile>
         <!-- 发布到 Maven Central Portal：mvn -Prelease deploy（GPG 签名 + 源码 + Javadoc + Central 发布插件） -->
 
@@ -809,13 +811,13 @@
             <dependency>
                 <groupId>com.itextpdf.tool</groupId>
                 <artifactId>xmlworker</artifactId>
-                <version>5.5.13.1</version>
+                <version>${itext-xmlworker.version}</version>
             </dependency>
             <!-- https://mvnrepository.com/artifact/com.itextpdf.tool/xfa-xmlworker -->
             <dependency>
                 <groupId>com.itextpdf.tool</groupId>
                 <artifactId>xfa-xmlworker</artifactId>
-                <version>2.0.5</version>
+                <version>${itext-xfa-xmlworker.version}</version>
             </dependency>
             <!-- For Beetl -->
             <dependency>

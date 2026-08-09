@@ -21,6 +21,11 @@ import org.docx4j.events.PackageIdentifier;
 import org.docx4j.events.ProcessStep;
 import org.docx4j.events.StartEvent;
 
+/**
+ * Implementation of build finished event extending EventFinished.
+ *
+ * [@Loong Wan](https://github.com/loong10k)
+ */
 public class BuildFinishedEvent extends EventFinished {
 
 	public BuildFinishedEvent(StartEvent started) {

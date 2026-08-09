@@ -29,6 +29,11 @@ import io.github.easy4j.pdf.Docx4jConstants;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+/**
+ * Implementation of output conversion h t m l style element handler functionality.
+ *
+ * [@Loong Wan](https://github.com/loong10k)
+ */
 public class OutputConversionHTMLStyleElementHandler implements ConversionHTMLStyleElementHandler {
 
 	private static final OutputConversionHTMLStyleElementHandler OUTPUT_CONVERSION_HTMLSTYLE_ELEMENT_HANDLER = new OutputConversionHTMLStyleElementHandler();

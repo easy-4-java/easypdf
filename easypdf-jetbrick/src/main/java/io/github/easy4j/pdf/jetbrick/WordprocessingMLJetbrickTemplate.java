@@ -33,8 +33,9 @@ import jetbrick.template.JetConfig;
 import jetbrick.template.JetEngine;
 
 /**
- * 该模板仅负责使用Jetbrick模板引擎将指定模板生成HTML并将HTML转换成XHTML后，作为模板生成WordprocessingMLPackage对象
- * @author <a href="https://github.com/vindell">vindell</a>
+ * Implementation of wordprocessing m l jetbrick template extending WordprocessingMLTemplate.
+ *
+ * [@Loong Wan](https://github.com/loong10k)
  */
 public class WordprocessingMLJetbrickTemplate extends WordprocessingMLTemplate {
 	

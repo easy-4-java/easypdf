@@ -15,6 +15,11 @@
  */
 package io.github.easy4j.pdf.jsp.engine.runtime;
 
+/**
+ * Contract interface for OriginalStream operations.
+ *
+ * [@Loong Wan](https://github.com/loong10k)
+ */
 public interface OriginalStream {
 
     public Object getOriginStream();

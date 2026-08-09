@@ -20,6 +20,11 @@ import org.docx4j.events.PackageIdentifier;
 import org.docx4j.events.ProcessStep;
 import org.docx4j.events.StartEvent;
 
+/**
+ * Implementation of build start event extending StartEvent.
+ *
+ * [@Loong Wan](https://github.com/loong10k)
+ */
 public class BuildStartEvent extends StartEvent {
 
 	public BuildStartEvent(JobIdentifier job) {

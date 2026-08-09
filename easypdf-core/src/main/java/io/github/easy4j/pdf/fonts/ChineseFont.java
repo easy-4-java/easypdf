@@ -17,6 +17,11 @@ package io.github.easy4j.pdf.fonts;
 
 import java.net.URL;
 
+/**
+ * Enumeration defining ChineseFont constants.
+ *
+ * [@Loong Wan](https://github.com/loong10k)
+ */
 public enum ChineseFont {
 	
 	//仿宋体

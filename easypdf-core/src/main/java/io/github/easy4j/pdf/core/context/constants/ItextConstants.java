@@ -9,8 +9,10 @@ public final class ItextConstants {
 	public static final String CORE20016 = null;
 	
 	/**
-	 * Logx.properties文件的文件名
-	 */
+ * Implementation of itext constants functionality.
+ *
+ * [@Loong Wan](https://github.com/loong10k)
+ */
 	public static final String LOGXS_FILE_NAME = "/Logx.properties";
 	
 	/**

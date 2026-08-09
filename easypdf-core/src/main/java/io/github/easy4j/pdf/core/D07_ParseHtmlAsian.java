@@ -36,6 +36,11 @@ import com.itextpdf.layout.Document;
 import com.itextpdf.text.DocumentException;
 import com.itextpdf.tool.xml.XMLWorkerHelper;
 
+/**
+ * Implementation of d07_ parse html asian functionality.
+ *
+ * [@Loong Wan](https://github.com/loong10k)
+ */
 public class D07_ParseHtmlAsian {
 
     public static final String HTML = "E:/Dropbox/document/java/designPattern/data/hero.html";

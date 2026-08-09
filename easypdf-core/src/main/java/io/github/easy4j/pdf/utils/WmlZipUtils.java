@@ -29,8 +29,9 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 
 /**
- * To change this template, choose Tools | Templates and open the template in the editor.
- * @author <a href="https://github.com/vindell">vindell</a>
+ * Implementation of wml zip utils functionality.
+ *
+ * [@Loong Wan](https://github.com/loong10k)
  */
 public class WmlZipUtils {
 

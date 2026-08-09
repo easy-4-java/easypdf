@@ -27,14 +27,10 @@ public class PDFPageEvent extends PdfPageEventHelper {
 
 
 	/**
-	 * 
-	 * @description: 设置幻灯片放映 
-	 * @author : <a href="mailto:hnxyhcwdl1003@163.com">wandalong</a>
-	 * @date : 2014-1-14
-	 * @time : 下午1:59:58 
-	 * @param writer
-	 * @param document
-	 */
+ * Implementation of p d f page event extending PdfPageEventHelper.
+ *
+ * [@Loong Wan](https://github.com/loong10k)
+ */
 	 public void onStartPage(PdfWriter writer, Document document) { 
          
 		 

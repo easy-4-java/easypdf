@@ -18,6 +18,11 @@
  */
 package io.github.easy4j.pdf.core.fonts;
 
+/**
+ * Implementation of base font factory functionality.
+ *
+ * [@Loong Wan](https://github.com/loong10k)
+ */
 public class BaseFontFactory {
 	
 }

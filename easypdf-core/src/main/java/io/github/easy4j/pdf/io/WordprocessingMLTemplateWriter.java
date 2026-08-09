@@ -34,6 +34,11 @@ import org.docx4j.openpackaging.parts.WordprocessingML.MainDocumentPart;
 import io.github.easy4j.pdf.Docx4jConstants;
 import io.github.easy4j.pdf.utils.Assert;
 
+/**
+ * Implementation of wordprocessing m l template writer functionality.
+ *
+ * [@Loong Wan](https://github.com/loong10k)
+ */
 public class WordprocessingMLTemplateWriter {
 
 	private static final WordprocessingMLTemplateWriter WML_TEMPLATE_WRITER = new WordprocessingMLTemplateWriter();

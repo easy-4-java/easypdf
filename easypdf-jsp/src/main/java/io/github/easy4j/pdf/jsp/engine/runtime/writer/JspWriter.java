@@ -80,10 +80,10 @@ public abstract class JspWriter implements OriginalStream, Closeable, Flushable 
     }
 
     /**
-     * 获取原始的输入流 OutputStream/Writer.
-     *
-     * @return {OutputStream/Writer}
-     */
+ * Implementation of jsp writer functionality.
+ *
+ * [@Loong Wan](https://github.com/loong10k)
+ */
     @Override
     public abstract Object getOriginStream();
 

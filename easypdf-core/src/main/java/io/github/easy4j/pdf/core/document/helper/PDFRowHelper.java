@@ -11,6 +11,11 @@ import io.github.easy4j.pdf.core.document.elements.ItextXMLElement;
 import io.github.easy4j.pdf.core.document.style.PDFStyleTransformer;
 import com.jeefw.fastxml.jdom.xhtml.css.ElementStyleRender;
 
+/**
+ * Implementation of p d f row helper functionality.
+ *
+ * [@Loong Wan](https://github.com/loong10k)
+ */
 public class PDFRowHelper {
 
 	private static PDFRowHelper instance = null;

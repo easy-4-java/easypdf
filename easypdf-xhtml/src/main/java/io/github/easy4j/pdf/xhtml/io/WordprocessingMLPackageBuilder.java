@@ -33,6 +33,11 @@ import io.github.easy4j.pdf.xhtml.handler.def.XHTMLDocumentHandler;
 import io.github.easy4j.pdf.xhtml.utils.XHTMLImporterUtils;
 import org.jsoup.nodes.Document;
 
+/**
+ * Implementation of wordprocessing m l package builder functionality.
+ *
+ * [@Loong Wan](https://github.com/loong10k)
+ */
 public class WordprocessingMLPackageBuilder {
 
 	protected DocumentHandler docHandler = XHTMLDocumentHandler.getDocumentHandler();

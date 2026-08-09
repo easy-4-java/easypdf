@@ -18,6 +18,11 @@ package io.github.easy4j.pdf.handler;
 import java.io.File;
 import java.io.FileFilter;
 
+/**
+ * Implementation of output dir filter handler functionality.
+ *
+ * [@Loong Wan](https://github.com/loong10k)
+ */
 public class OutputDirFilterHandler implements FileFilter {
 
 	protected String outdir;

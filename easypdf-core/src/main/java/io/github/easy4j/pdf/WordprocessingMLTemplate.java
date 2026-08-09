@@ -20,8 +20,9 @@ import java.util.Map;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 
 /**
- * 模板处理接口
- * @author <a href="https://github.com/vindell">vindell</a>
+ * Implementation of wordprocessing m l template functionality.
+ *
+ * [@Loong Wan](https://github.com/loong10k)
  */
 public abstract class WordprocessingMLTemplate {
 	

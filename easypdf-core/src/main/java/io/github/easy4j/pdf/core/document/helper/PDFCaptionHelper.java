@@ -15,6 +15,11 @@ import io.github.easy4j.pdf.core.document.elements.ItextXMLElement;
 import io.github.easy4j.pdf.core.document.resolver.ItextFontResolver;
 import io.github.easy4j.pdf.core.document.style.PDFStyleTransformer;
 import com.jeefw.fastxml.jdom.xhtml.css.ElementStyleRender;
+/**
+ * Implementation of p d f caption helper functionality.
+ *
+ * [@Loong Wan](https://github.com/loong10k)
+ */
 public class PDFCaptionHelper{
 
 	private static PDFCaptionHelper instance = null;

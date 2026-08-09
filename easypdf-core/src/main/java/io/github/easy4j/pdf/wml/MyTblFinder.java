@@ -21,6 +21,11 @@ import java.util.List;
 import org.docx4j.TraversalUtil.CallbackImpl;
 import org.docx4j.wml.Tbl;  
   
+/**
+ * Implementation of my tbl finder extending CallbackImpl.
+ *
+ * [@Loong Wan](https://github.com/loong10k)
+ */
 public class MyTblFinder extends CallbackImpl { 
 	
     public List<Tbl> tblList = new ArrayList<Tbl>();  

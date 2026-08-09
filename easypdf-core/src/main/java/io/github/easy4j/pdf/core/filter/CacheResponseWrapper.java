@@ -9,6 +9,11 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
 
+/**
+ * Implementation of cache response wrapper extending HttpServletResponseWrapper.
+ *
+ * [@Loong Wan](https://github.com/loong10k)
+ */
 public class CacheResponseWrapper extends HttpServletResponseWrapper {
 	
 	protected HttpServletResponse origResponse = null;

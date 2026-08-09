@@ -152,8 +152,10 @@ public final class PathUtils {
     }
 
     /**
-     * 组合路径.
-     */
+ * Implementation of path utils functionality.
+ *
+ * [@Loong Wan](https://github.com/loong10k)
+ */
     public static String concat(final String parent, final String child) {
         if (parent == null) {
             return normalize(child);

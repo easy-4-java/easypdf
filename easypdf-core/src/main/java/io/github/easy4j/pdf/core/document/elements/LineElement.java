@@ -2,6 +2,11 @@ package io.github.easy4j.pdf.core.document.elements;
 
 import com.itextpdf.text.pdf.PdfPTable;
 
+/**
+ * Implementation of line element extending PdfPTable.
+ *
+ * [@Loong Wan](https://github.com/loong10k)
+ */
 public class LineElement extends PdfPTable {
 	
 	public LineElement render(ItextXMLElement element) {

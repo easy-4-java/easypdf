@@ -13,6 +13,11 @@ import com.jeefw.fastkit.beanutils.JavaBeanUtils;
 import io.github.easy4j.pdf.core.document.elements.ItextXMLElement;
 import io.github.easy4j.pdf.core.document.style.PDFStyleTransformer;
 import com.jeefw.fastxml.jdom.xhtml.css.ElementStyleRender;
+/**
+ * Implementation of p d f tbody helper functionality.
+ *
+ * [@Loong Wan](https://github.com/loong10k)
+ */
 public class PDFTbodyHelper{
 
 	private static PDFTbodyHelper instance = null;

@@ -6,6 +6,11 @@ import java.io.OutputStream;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 
+/**
+ * Implementation of cache response stream extending ServletOutputStream.
+ *
+ * [@Loong Wan](https://github.com/loong10k)
+ */
 public class CacheResponseStream extends ServletOutputStream {
 	
 	protected boolean closed = false;

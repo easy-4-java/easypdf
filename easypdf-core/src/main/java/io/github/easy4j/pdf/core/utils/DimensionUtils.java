@@ -6,6 +6,11 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Implementation of dimension utils functionality.
+ *
+ * [@Loong Wan](https://github.com/loong10k)
+ */
 public class DimensionUtils {
 
 	private static final String[] units = new String[]{"em","px","pt","%",""};

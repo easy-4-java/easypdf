@@ -11,6 +11,11 @@ import io.github.easy4j.pdf.core.document.resolver.ItextBaseColorResolver;
 import io.github.easy4j.pdf.core.document.resolver.ItextFontResolver;
 import com.jeefw.fastxml.jdom.xhtml.StyleTransformer;
 
+/**
+ * Implementation of p d f style transformer functionality.
+ *
+ * [@Loong Wan](https://github.com/loong10k)
+ */
 public class PDFStyleTransformer implements StyleTransformer<ItextXMLElement> {
 	
 	private static PDFStyleTransformer instance = null;

@@ -33,9 +33,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
  
 /**
- * 关于文件操作的工具类 （来自：https://blog.csdn.net/qq_35598240/article/details/84439929）
- * 备注：该工具只能解决固定模板的word生成
- * @author kaizen
+ * Implementation of docx4j template utils functionality.
+ *
+ * [@Loong Wan](https://github.com/loong10k)
  */
 public final class Docx4jTemplateUtils {
  

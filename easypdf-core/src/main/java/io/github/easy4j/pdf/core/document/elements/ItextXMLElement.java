@@ -20,15 +20,10 @@ public abstract class ItextXMLElement extends XMLCSSElement{
 	protected String id="";
 	
 	/**
-	 * @description: 根据元素拥有的样式，并对样式进行itext模式的转换，给元素添加样式
-	 * @author : <a href="mailto:hnxyhcwdl1003@163.com">wandalong</a>
-	 * @date 下午5:14:46 2013-8-15 
-	 * @param element
-	 * @throws  
-	 * @modify by:
-	 * @modify date :
-	 * @modify description : TODO(描述修改内容)
-	 */
+ * Implementation of itext x m l element extending XMLCSSElement.
+ *
+ * [@Loong Wan](https://github.com/loong10k)
+ */
 	public Font getFont(){
 		try {
 			return ItextFontResolver.getInstance().getFont(this);

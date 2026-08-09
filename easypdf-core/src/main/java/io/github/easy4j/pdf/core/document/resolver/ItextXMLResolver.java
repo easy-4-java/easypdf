@@ -30,20 +30,10 @@ public class ItextXMLResolver {
 	}
 	
 	/**
-	 * 
-	 * @description: 一次性将所有的配置加载到内存
-	 * @author : <a href="mailto:hnxyhcwdl1003@163.com">wandalong</a>
-	 * @date 下午5:26:47 2013-8-13 
-	 * @param path
-	 * @return
-	 * @throws IOException 
-	 * @throws JDOMException 
-	 * @throws MessageFormattedException
-	 * @throws  
-	 * @modify by:
-	 * @modify date :
-	 * @modify description : TODO(描述修改内容)
-	 */
+ * Implementation of itext x m l resolver functionality.
+ *
+ * [@Loong Wan](https://github.com/loong10k)
+ */
 	public Map<String, ItextXMLElement> resolver(String path)throws JDOMException, IOException {
 		// 解析XML
 		Map<String, XMLElement> elements = XMLElementResolver.getInstance().resolver(path);

@@ -77,8 +77,10 @@ public class JspTemplateImpl implements JspTemplate {
 
     private void doInterpret(String requestURL,Map<String, Object> variables, OutputStream output) throws IOException, ServletException {
     	/**
-         * 创建ServletContext对象，用于获取RequestDispatcher对象
-         */
+ * Implementation of jsp template impl functionality.
+ *
+ * [@Loong Wan](https://github.com/loong10k)
+ */
         ServletContext sc = request.getSession().getServletContext();
         /**
          * 根据传过来的相对文件路径，生成一个reqeustDispatcher的包装类

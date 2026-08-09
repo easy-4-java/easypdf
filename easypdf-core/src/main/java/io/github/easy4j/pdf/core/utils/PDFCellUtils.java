@@ -12,11 +12,10 @@ import com.itextpdf.text.pdf.PdfPTable;
 public final class PDFCellUtils {
 
 	/**
-	 * 构造一个自定义的cell单元格内容(默认居中对齐,默认字体)
-	 * @param content 单元格内容
-	 * @return com.lowagie.text.pdf.PdfPCell
-	 * 
-	 */
+ * Implementation of p d f cell utils functionality.
+ *
+ * [@Loong Wan](https://github.com/loong10k)
+ */
 	public static PdfPCell getCell(String content) {
 		return getCell(content, 1, PdfPCell.ALIGN_CENTER,PdfPCell.ALIGN_MIDDLE, new Font());
 	}

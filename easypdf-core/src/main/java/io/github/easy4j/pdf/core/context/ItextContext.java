@@ -25,10 +25,9 @@ import com.jeefw.fastkit.lang3.BooleanUtils;
 import io.github.easy4j.pdf.core.context.constants.ConfigConstants;
 import io.github.easy4j.pdf.core.document.elements.ItextXMLElement;
 /**
- * 
- * @description:Logx 上下文 
- * @author <a href="mailto:hnxyhcwdl1003@163.com">wandalong</a>
- * @date 2012-4-23
+ * Implementation of itext context extending AbstractContext.
+ *
+ * [@Loong Wan](https://github.com/loong10k)
  */
 public class ItextContext extends AbstractContext {
 

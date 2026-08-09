@@ -51,6 +51,11 @@ import java.util.Map;
  * @since 1.1.2
  */
 @SuppressWarnings({ "unchecked", "rawtypes" })
+/**
+ * Implementation of assert functionality.
+ *
+ * [@Loong Wan](https://github.com/loong10k)
+ */
 public abstract class Assert {
 
 	/*

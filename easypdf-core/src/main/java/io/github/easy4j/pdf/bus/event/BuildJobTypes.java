@@ -17,6 +17,11 @@ package io.github.easy4j.pdf.bus.event;
 
 import org.docx4j.events.JobIdentifier;
 
+/**
+ * Enumeration defining BuildJobTypes constants.
+ *
+ * [@Loong Wan](https://github.com/loong10k)
+ */
 public enum BuildJobTypes implements JobIdentifier {
 			
 	DOC,

@@ -28,8 +28,9 @@ import io.github.easy4j.pdf.fonts.FontMapperHolder;
 import io.github.easy4j.pdf.utils.WmlZipUtils;
 
 /**
- * 该模板负责对WordprocessingMLPackage进行普通变量替换和复杂变量替换并返回处理后的WordprocessingMLPackage对象
- * @author <a href="https://github.com/vindell">vindell</a>
+ * Implementation of wordprocessing m l docx template extending WordprocessingMLTemplate.
+ *
+ * [@Loong Wan](https://github.com/loong10k)
  */
 public class WordprocessingMLDocxTemplate extends WordprocessingMLTemplate {
 

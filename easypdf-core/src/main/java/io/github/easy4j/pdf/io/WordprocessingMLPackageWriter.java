@@ -66,12 +66,10 @@ public class WordprocessingMLPackageWriter  {
 	}
 	
 	/**
-	 * 将 {@link org.docx4j.openpackaging.packages.WordprocessingMLPackage} 存为 docx
-	 * @param wmlPackage {@link WordprocessingMLPackage} 对象
-	 * @return {@link File} docx 文档
-	 * @throws IOException ：IO异常
-	 * @throws Docx4JException ： Docx4j异常
-	 */
+ * Implementation of wordprocessing m l package writer functionality.
+ *
+ * [@Loong Wan](https://github.com/loong10k)
+ */
 	public File writeToDocx(WordprocessingMLPackage wmlPackage) throws  IOException, Docx4JException{
 		Assert.notNull(wmlPackage, " wmlPackage is not specified!");
 		File outFile = new File( Docx4jUtils.getTempPath() + DOCX_SUFFIX );

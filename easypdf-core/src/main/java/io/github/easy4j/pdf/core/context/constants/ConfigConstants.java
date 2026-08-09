@@ -4,8 +4,10 @@ public class ConfigConstants {
 	
 	//---------初始化---------------------------------------
 	/**
-	 * Key[itext.config.path] : IMexportContext 初始化properties文件路径 .  默认 ： itext-config.properties
-	 */
+ * Implementation of config constants functionality.
+ *
+ * [@Loong Wan](https://github.com/loong10k)
+ */
 	public static String KEY_CONFIG_FILE_PATH = "itext.config.path";
 	
 	/**

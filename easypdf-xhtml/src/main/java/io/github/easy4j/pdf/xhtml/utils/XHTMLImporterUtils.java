@@ -29,6 +29,11 @@ import io.github.easy4j.pdf.Docx4jConstants;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Entities;
 
+/**
+ * Implementation of x h t m l importer utils functionality.
+ *
+ * [@Loong Wan](https://github.com/loong10k)
+ */
 public class XHTMLImporterUtils {
 
 	public static WordprocessingMLPackage handle(WordprocessingMLPackage wmlPackage, Document doc,boolean fragment,boolean altChunk) throws IOException, Docx4JException {

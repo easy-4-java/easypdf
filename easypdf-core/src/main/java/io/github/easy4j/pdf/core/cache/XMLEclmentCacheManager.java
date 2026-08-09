@@ -10,14 +10,9 @@ import org.slf4j.LoggerFactory;
 import io.github.easy4j.pdf.core.document.elements.ItextXMLElement;
 
 /**
- * 
- *@类名称	: POICellStyleCacheManager.java
- *@类描述	：单元格样式缓存管理
- *@创建人	：wandalong
- *@创建时间	：Mar 26, 2016 11:24:59 PM
- *@修改人	：
- *@修改时间	：
- *@版本号	:v1.0
+ * Implementation of x m l eclment cache manager functionality.
+ *
+ * [@Loong Wan](https://github.com/loong10k)
  */
 public class XMLEclmentCacheManager {
 	

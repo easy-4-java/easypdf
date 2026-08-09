@@ -18,6 +18,11 @@ package io.github.easy4j.pdf.fonts;
 import org.docx4j.fonts.Mapper;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 
+/**
+ * Implementation of font mapper holder functionality.
+ *
+ * [@Loong Wan](https://github.com/loong10k)
+ */
 public class FontMapperHolder {
 
 	private static Mapper fontMapper;

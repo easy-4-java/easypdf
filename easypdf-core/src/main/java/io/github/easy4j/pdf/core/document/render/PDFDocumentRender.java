@@ -52,12 +52,10 @@ public class PDFDocumentRender extends DocumentRender{
 	
 	
 	/**
-	 * @description: 根据documentID指定的配置信息和数据渲染PDF文档
-	 * @param documentID
-	 * @param datas
-	 * @return
-	 * @throws Exception
-	 */
+ * Implementation of p d f document render extending DocumentRender.
+ *
+ * [@Loong Wan](https://github.com/loong10k)
+ */
 	public <T> ByteArrayInputStream render(String documentID,List<T> datas) throws Exception{
 		return this.render(documentID, new HashMap(), datas);
 	}

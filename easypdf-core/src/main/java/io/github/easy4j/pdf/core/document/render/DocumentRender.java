@@ -4,6 +4,11 @@ import java.io.ByteArrayInputStream;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Implementation of document render functionality.
+ *
+ * [@Loong Wan](https://github.com/loong10k)
+ */
 public abstract class DocumentRender {
 
 	

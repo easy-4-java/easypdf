@@ -18,6 +18,11 @@ package io.github.easy4j.pdf.handler;
 import org.docx4j.convert.out.html.HTMLConversionImageHandler;
 
 
+/**
+ * Implementation of output conversion image handler extending HTMLConversionImageHandler.
+ *
+ * [@Loong Wan](https://github.com/loong10k)
+ */
 public class OutputConversionImageHandler extends HTMLConversionImageHandler {
 
 	public OutputConversionImageHandler(String imageDirPath, String targetUri, boolean includeUUID) {

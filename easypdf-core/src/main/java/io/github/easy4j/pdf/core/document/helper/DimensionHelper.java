@@ -10,7 +10,7 @@ import io.github.easy4j.pdf.core.utils.DimensionUtils;
  * @package io.github.easy4j.pdf.core.document.helper
  * @className: DimensionHelper
  * @description: TODO
- * @author : <a href="mailto:hnxyhcwdl1003@163.com">wandalong</a>
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  * @date : 2014-1-22
  * @time : 下午2:15:45 
  */

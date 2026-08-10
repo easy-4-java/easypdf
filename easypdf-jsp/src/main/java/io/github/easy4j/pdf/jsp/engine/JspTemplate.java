@@ -25,7 +25,7 @@ import javax.servlet.ServletException;
 /**
  * 
  * TODO
- * @author <a href="https://github.com/vindell">vindell</a>
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  */
 public interface JspTemplate {
 

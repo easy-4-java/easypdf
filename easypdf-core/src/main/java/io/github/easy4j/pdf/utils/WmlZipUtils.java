@@ -30,7 +30,7 @@ import org.apache.commons.io.IOUtils;
 
 /**
  * To change this template, choose Tools | Templates and open the template in the editor.
- * @author <a href="https://github.com/vindell">vindell</a>
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  */
 public class WmlZipUtils {
 

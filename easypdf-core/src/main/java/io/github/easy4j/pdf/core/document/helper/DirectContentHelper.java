@@ -11,7 +11,7 @@ import com.itextpdf.text.pdf.PdfWriter;
  * @package io.github.easy4j.pdf.core.document.helper
  * @className: RectangleHelper
  * @description: TODO
- * @author : <a href="mailto:hnxyhcwdl1003@163.com">wandalong</a>
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  * @date : 2014-1-14
  * @time : 上午11:08:53 
  */

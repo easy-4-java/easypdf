@@ -22,7 +22,7 @@ import java.util.StringTokenizer;
 
 /**
  * TODO
- * @author <a href="https://github.com/vindell">vindell</a>
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  */
 public class StringUtils extends org.apache.commons.lang3.StringUtils {
 	
@@ -35,7 +35,7 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils {
 	/*
 	 * 
 	 * @description	： 获得以 ",; \t\n"分割的字符数组
-	 * @author 		： <a href="https://github.com/vindell">vindell</a>
+	 * @author <a href="https://github.com/loong10k">Loong Wan</a>
 	 * @date 		：2017年5月24日 下午10:27:51
 	 * @param str
 	 * @return

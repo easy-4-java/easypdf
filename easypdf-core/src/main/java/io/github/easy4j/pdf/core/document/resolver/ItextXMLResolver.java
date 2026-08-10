@@ -13,7 +13,7 @@ import com.jeefw.fastxml.jdom.xhtml.sax.XMLElementResolver;
  * 
  * @className: XMLResolver
  * @description: XML配置文件解析器
- * @author : <a href="mailto:hnxyhcwdl1003@163.com">wandalong</a>
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  * @date : 上午9:39:10 2013-8-14
  * @modify by:
  * @modify date :
@@ -32,7 +32,7 @@ public class ItextXMLResolver {
 	/**
 	 * 
 	 * @description: 一次性将所有的配置加载到内存
-	 * @author : <a href="mailto:hnxyhcwdl1003@163.com">wandalong</a>
+	 * @author <a href="https://github.com/loong10k">Loong Wan</a>
 	 * @date 下午5:26:47 2013-8-13 
 	 * @param path
 	 * @return

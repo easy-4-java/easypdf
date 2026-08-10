@@ -21,7 +21,7 @@ public abstract class ItextXMLElement extends XMLCSSElement{
 	
 	/**
 	 * @description: 根据元素拥有的样式，并对样式进行itext模式的转换，给元素添加样式
-	 * @author : <a href="mailto:hnxyhcwdl1003@163.com">wandalong</a>
+	 * @author <a href="https://github.com/loong10k">Loong Wan</a>
 	 * @date 下午5:14:46 2013-8-15 
 	 * @param element
 	 * @throws  

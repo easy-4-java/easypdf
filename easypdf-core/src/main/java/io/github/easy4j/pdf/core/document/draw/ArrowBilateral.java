@@ -8,7 +8,7 @@ import com.itextpdf.text.pdf.PdfContentByte;
  * @package io.github.easy4j.pdf.core.document.elements
  * @className: Arrow
  * @description: 左边箭头
- * @author : <a href="mailto:hnxyhcwdl1003@163.com">wandalong</a>
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  * @date : 2014-1-14
  * @time : 下午7:09:03
  */

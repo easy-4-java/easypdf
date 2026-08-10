@@ -12,7 +12,7 @@ import com.jeefw.fastxml.jdom.xhtml.AlignmentResolver;
  * @package io.github.easy4j.pdf.core.document.resolver
  * @className: ItextAlignmentResolver
  * @description: TODO
- * @author : <a href="mailto:hnxyhcwdl1003@163.com">wandalong</a>
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  * @date : 2014-1-16
  * @time : 下午7:44:39
  */

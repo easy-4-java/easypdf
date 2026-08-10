@@ -27,7 +27,7 @@ import io.github.easy4j.pdf.core.document.elements.ItextXMLElement;
 /**
  * 
  * @description:Logx 上下文 
- * @author <a href="mailto:hnxyhcwdl1003@163.com">wandalong</a>
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  * @date 2012-4-23
  */
 public class ItextContext extends AbstractContext {

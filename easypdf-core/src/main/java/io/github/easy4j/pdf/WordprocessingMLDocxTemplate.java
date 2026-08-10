@@ -29,7 +29,7 @@ import io.github.easy4j.pdf.utils.WmlZipUtils;
 
 /**
  * 该模板负责对WordprocessingMLPackage进行普通变量替换和复杂变量替换并返回处理后的WordprocessingMLPackage对象
- * @author <a href="https://github.com/vindell">vindell</a>
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  */
 public class WordprocessingMLDocxTemplate extends WordprocessingMLTemplate {
 

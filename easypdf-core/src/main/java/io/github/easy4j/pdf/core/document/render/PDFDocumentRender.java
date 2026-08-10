@@ -24,7 +24,7 @@ import io.github.easy4j.pdf.core.document.helper.PDFWriterHelper;
  * 
  * @className: PDFDocumentRender
  * @description: XML配置文件解析渲染器，根据XML渲染PDF页面内容
- * @author : <a href="mailto:hnxyhcwdl1003@163.com">wandalong</a>
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  * @date : 上午9:39:10 2013-8-14
  * @modify by:
  * @modify date :

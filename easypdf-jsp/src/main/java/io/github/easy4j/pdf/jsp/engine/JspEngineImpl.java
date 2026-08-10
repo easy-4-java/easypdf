@@ -27,7 +27,7 @@ import io.github.easy4j.pdf.utils.PathUtils;
 /**
  * 
  * TODO
- * @author <a href="https://github.com/vindell">vindell</a>
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  */
 public class JspEngineImpl extends JspEngine{
 

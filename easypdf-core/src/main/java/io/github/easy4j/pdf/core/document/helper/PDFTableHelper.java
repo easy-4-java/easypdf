@@ -15,7 +15,7 @@ import io.github.easy4j.pdf.core.document.elements.ItextXMLElement;
  * @package io.github.easy4j.pdf.core.document.helper
  * @className: PDFTableHelper
  * @description: table元素节点处理助手，采用多线程方式
- * @author : <a href="mailto:hnxyhcwdl1003@163.com">wandalong</a>
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  * @date : 2014-1-17
  * @time : 下午2:07:43
  */

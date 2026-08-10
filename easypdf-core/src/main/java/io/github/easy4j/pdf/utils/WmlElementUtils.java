@@ -31,7 +31,7 @@ import org.docx4j.wml.Text;
 
 /**
  * TODO
- * @author <a href="https://github.com/vindell">vindell</a>
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  */
 public final class WmlElementUtils {
 

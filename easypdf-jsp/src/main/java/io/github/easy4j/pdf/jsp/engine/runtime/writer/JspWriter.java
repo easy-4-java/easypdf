@@ -30,7 +30,7 @@ import io.github.easy4j.pdf.jsp.engine.runtime.OriginalStream;
 /**
  * 
  * TODO
- * @author <a href="https://github.com/vindell">vindell</a>
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  */
 public abstract class JspWriter implements OriginalStream, Closeable, Flushable {
 

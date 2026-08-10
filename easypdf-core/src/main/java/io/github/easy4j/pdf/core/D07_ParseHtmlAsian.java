@@ -19,7 +19,7 @@ package io.github.easy4j.pdf.core;
  * *******************************************************************
  * @className	： D07_ParseHtmlAsian
  * @description	： TODO(描述这个类的作用)
- * @author 		： <a href="mailto:hnxyhcwdl1003@163.com">wandalong</a>
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  * @date		： Jan 16, 2017 12:26:38 PM
  * @version 	V1.0 
  * *******************************************************************

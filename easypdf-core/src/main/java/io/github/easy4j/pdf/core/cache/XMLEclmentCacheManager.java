@@ -12,7 +12,7 @@ import io.github.easy4j.pdf.core.document.elements.ItextXMLElement;
 /**
  * Implementation of x m l eclment cache manager functionality.
  *
- * [@Loong Wan](https://github.com/loong10k)
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  */
 public class XMLEclmentCacheManager {
 	

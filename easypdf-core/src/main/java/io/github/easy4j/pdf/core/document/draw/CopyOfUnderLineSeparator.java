@@ -9,7 +9,7 @@ import com.itextpdf.text.pdf.draw.LineSeparator;
  * @package io.github.easy4j.pdf.core.document.draw
  * @className: UnderLineSeparator
  * @description: TODO
- * @author : <a href="mailto:hnxyhcwdl1003@163.com">wandalong</a>
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  * @date : 2014-1-15
  * @time : 上午8:48:28 
  */

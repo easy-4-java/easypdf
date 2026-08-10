@@ -1,12 +1,17 @@
 package io.github.easy4j.pdf.core.context.constants;
 
+/**
+ * Class providing functionality for ConfigConstants.
+ *
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
+ */
 public class ConfigConstants {
 	
 	//---------初始化---------------------------------------
 	/**
  * Implementation of config constants functionality.
  *
- * [@Loong Wan](https://github.com/loong10k)
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  */
 	public static String KEY_CONFIG_FILE_PATH = "itext.config.path";
 	

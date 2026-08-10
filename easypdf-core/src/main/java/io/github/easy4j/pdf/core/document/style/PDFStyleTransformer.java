@@ -14,7 +14,7 @@ import com.jeefw.fastxml.jdom.xhtml.StyleTransformer;
 /**
  * Implementation of p d f style transformer functionality.
  *
- * [@Loong Wan](https://github.com/loong10k)
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  */
 public class PDFStyleTransformer implements StyleTransformer<ItextXMLElement> {
 	

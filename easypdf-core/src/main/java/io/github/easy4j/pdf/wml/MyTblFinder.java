@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2018, vindell (https://github.com/vindell).
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
@@ -24,7 +24,7 @@ import org.docx4j.wml.Tbl;
 /**
  * Implementation of my tbl finder extending CallbackImpl.
  *
- * [@Loong Wan](https://github.com/loong10k)
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  */
 public class MyTblFinder extends CallbackImpl { 
 	

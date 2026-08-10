@@ -9,7 +9,7 @@ import com.itextpdf.text.Element;
  * 
  * @className: StyleResolver
  * @description: 样式解析器
- * @author : <a href="mailto:hnxyhcwdl1003@163.com">wandalong</a>
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  * @date : 下午5:10:14 2013-8-14
  * @modify by:
  * @modify date :

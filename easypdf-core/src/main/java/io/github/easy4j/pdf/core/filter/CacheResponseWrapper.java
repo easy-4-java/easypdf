@@ -12,7 +12,7 @@ import javax.servlet.http.HttpServletResponseWrapper;
 /**
  * Implementation of cache response wrapper extending HttpServletResponseWrapper.
  *
- * [@Loong Wan](https://github.com/loong10k)
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  */
 public class CacheResponseWrapper extends HttpServletResponseWrapper {
 	

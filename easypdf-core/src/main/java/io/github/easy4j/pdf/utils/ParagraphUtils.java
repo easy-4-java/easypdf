@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2018, vindell (https://github.com/vindell).
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
@@ -23,11 +23,11 @@ import org.docx4j.wml.R;
 
 /**
  * TODO
- * @author <a href="https://github.com/vindell">vindell</a>
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  */
 public class ParagraphUtils {
 
-	/*
+	/**
      *  向新的段落中添加内联图片并返回这个段落.
      *  这个方法与前面例子中的方法没有区别.
      * @param inline

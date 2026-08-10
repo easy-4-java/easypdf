@@ -9,7 +9,7 @@ import java.util.regex.Pattern;
 /**
  * Implementation of dimension utils functionality.
  *
- * [@Loong Wan](https://github.com/loong10k)
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  */
 public class DimensionUtils {
 

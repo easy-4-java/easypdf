@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2018, vindell (https://github.com/vindell).
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
@@ -37,7 +37,7 @@ import org.apache.commons.io.IOUtils;
 /**
  * 
  * TODO
- * @author <a href="https://github.com/vindell">vindell</a>
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  */
 public class JspTemplateImpl implements JspTemplate {
 	
@@ -79,7 +79,7 @@ public class JspTemplateImpl implements JspTemplate {
     	/**
  * Implementation of jsp template impl functionality.
  *
- * [@Loong Wan](https://github.com/loong10k)
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  */
         ServletContext sc = request.getSession().getServletContext();
         /**

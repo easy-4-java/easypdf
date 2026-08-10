@@ -12,6 +12,11 @@ import com.itextpdf.text.pdf.PdfReader;
 import com.itextpdf.text.pdf.PdfStamper;
 import io.github.easy4j.pdf.core.document.elements.ItextXMLElement;
 
+/**
+ * Class providing functionality for WatermarkHelper.
+ *
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
+ */
 public final class WatermarkHelper {
 	
 	private static WatermarkHelper instance = null;

@@ -16,7 +16,7 @@ import com.jeefw.fastkit.configuration.config.Config;
  * *******************************************************************
  * @className	： ItextContextInitListener
  * @description	： ServletContext监听器 ，用来监听ItextContext上下文初始化状态
- * @author 		： <a href="mailto:hnxyhcwdl1003@163.com">wandalong</a>
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  * @date		： Mar 11, 2016 10:34:06 PM
  * @version 	V1.0 
  * *******************************************************************

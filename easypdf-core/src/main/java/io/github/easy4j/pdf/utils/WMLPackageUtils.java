@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2018, vindell (https://github.com/vindell).
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
@@ -47,9 +47,14 @@ import org.docx4j.wml.Tr;
 
 /**
  * TODO
- * @author <a href="https://github.com/vindell">vindell</a>
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  */
 @SuppressWarnings("unchecked")
+/**
+ * Class providing functionality for WMLPackageUtils.
+ *
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
+ */
 public class WMLPackageUtils {
 	
 	protected static String CONTENT_TYPE = "";
@@ -197,7 +202,7 @@ public class WMLPackageUtils {
 	/**
  * Implementation of w m l package utils functionality.
  *
- * [@Loong Wan](https://github.com/loong10k)
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  */
 	public static void replaceTable(String[] placeholders, List<Map<String, String>> textToAdd,
             WordprocessingMLPackage template) throws Docx4JException {  
@@ -284,7 +289,7 @@ public class WMLPackageUtils {
         }  
     } 
     
-	/*
+	/**
      * 将图片从文件对象转换成字节数组. 
      * @param file  将要转换的文件 
      * @return      包含图片字节数据的字节数组 

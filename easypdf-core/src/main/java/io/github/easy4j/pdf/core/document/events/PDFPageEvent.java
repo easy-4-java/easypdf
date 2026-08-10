@@ -12,7 +12,7 @@ import io.github.easy4j.pdf.core.document.elements.ItextXMLElement;
  * @package io.github.easy4j.pdf.core.document.events
  * @className: PDFPageEvent
  * @description: TODO
- * @author : <a href="mailto:hnxyhcwdl1003@163.com">wandalong</a>
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  * @date : 2014-1-15
  * @time : 下午1:33:59 
  */
@@ -29,7 +29,7 @@ public class PDFPageEvent extends PdfPageEventHelper {
 	/**
  * Implementation of p d f page event extending PdfPageEventHelper.
  *
- * [@Loong Wan](https://github.com/loong10k)
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  */
 	 public void onStartPage(PdfWriter writer, Document document) { 
          
@@ -42,7 +42,7 @@ public class PDFPageEvent extends PdfPageEventHelper {
 	/**
 	 * 
 	 * @description: 设置Header, Footer 
-	 * @author : <a href="mailto:hnxyhcwdl1003@163.com">wandalong</a>
+	 * @author <a href="https://github.com/loong10k">Loong Wan</a>
 	 * @date : 2014-1-14
 	 * @time : 下午2:00:32 
 	 * @param writer

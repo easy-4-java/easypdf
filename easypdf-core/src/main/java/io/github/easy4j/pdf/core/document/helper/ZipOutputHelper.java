@@ -3,7 +3,7 @@
  * @title: ZipOutput.java
  * @package io.github.easy4j.pdf.core.document.helper
  * @description: TODO
- * @author : <a href="mailto:hnxyhcwdl1003@163.com">wandalong</a>
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  * @date : 2014-1-14
  * @time : 下午2:04:04 
  */
@@ -23,7 +23,7 @@ import io.github.easy4j.pdf.core.context.ItextContext;
  * @package io.github.easy4j.pdf.core.document.helper
  * @className: ZipOutput
  * @description: TODO
- * @author : <a href="mailto:hnxyhcwdl1003@163.com">wandalong</a>
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  * @date : 2014-1-14
  * @time : 下午2:04:04 
  */

@@ -28,6 +28,11 @@ import java.util.LinkedList;
 
 import jetbrick.io.resource.Resource;
 
+/**
+ * Class providing functionality for PathUtils.
+ *
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
+ */
 public final class PathUtils {
 
     public static URL fileAsUrl(String file) {
@@ -154,7 +159,7 @@ public final class PathUtils {
     /**
  * Implementation of path utils functionality.
  *
- * [@Loong Wan](https://github.com/loong10k)
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  */
     public static String concat(final String parent, final String child) {
         if (parent == null) {

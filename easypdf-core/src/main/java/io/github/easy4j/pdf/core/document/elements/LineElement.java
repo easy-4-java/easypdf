@@ -5,7 +5,7 @@ import com.itextpdf.text.pdf.PdfPTable;
 /**
  * Implementation of line element extending PdfPTable.
  *
- * [@Loong Wan](https://github.com/loong10k)
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  */
 public class LineElement extends PdfPTable {
 	

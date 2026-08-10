@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2018, vindell (https://github.com/vindell).
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
@@ -22,7 +22,7 @@ import java.util.StringTokenizer;
 
 /**
  * TODO
- * @author <a href="https://github.com/vindell">vindell</a>
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  */
 public class StringUtils extends org.apache.commons.lang3.StringUtils {
 	
@@ -32,11 +32,11 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils {
 	 */
 	public static String CONFIG_LOCATION_DELIMITERS = ",; \t\n";
 	
-	/*
+	/**
 	 * 
-	 * @description	： 获得以 ",; \t\n"分割的字符数组
-	 * @author 		： <a href="https://github.com/vindell">vindell</a>
-	 * @date 		：2017年5月24日 下午10:27:51
+	 * 获得以 ",; \t\n"分割的字符数组
+	 * @author <a href="https://github.com/loong10k">Loong Wan</a>
+	 * 
 	 * @param str
 	 * @return
 	 */
@@ -44,7 +44,7 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils {
 		return tokenizeToStringArray(str, CONFIG_LOCATION_DELIMITERS, true, true);
 	}
 	
-	/*
+	/**
 	 * Tokenize the given String into a String array via a StringTokenizer.
 	 * Trims tokens and omits empty tokens.
 	 * <p>The given delimiters string is supposed to consist of any number of
@@ -63,7 +63,7 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils {
 		return tokenizeToStringArray(str, delimiters, true, true);
 	}
 
-	/*
+	/**
 	 * Tokenize the given String into a String array via a StringTokenizer.
 	 * <p>The given delimiters string is supposed to consist of any number of
 	 * delimiter characters. Each of those characters can be used to separate
@@ -102,7 +102,7 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils {
 		return toStringArray(tokens);
 	}
 	
-	/*
+	/**
 	 * Copy the given Collection into a String array.
 	 * The Collection must contain String elements only.
 	 * @param collection the Collection to copy

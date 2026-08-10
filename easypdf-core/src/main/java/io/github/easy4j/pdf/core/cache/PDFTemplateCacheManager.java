@@ -16,7 +16,7 @@ import com.jeefw.fastkit.lang3.StringUtils;
  * *******************************************************************
  * @className	： PDFTemplateCacheManager
  * @description	： TODO(描述这个类的作用)
- * @author 		： <a href="mailto:hnxyhcwdl1003@163.com">wandalong</a>
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  * @date		： Oct 22, 2016 8:11:58 PM
  * @version 	V1.0 
  * *******************************************************************

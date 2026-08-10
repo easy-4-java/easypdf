@@ -22,7 +22,7 @@ import io.github.easy4j.pdf.core.document.elements.ItextXMLElement;
 /**
  * Implementation of document cache filter functionality.
  *
- * [@Loong Wan](https://github.com/loong10k)
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  */
 public class DocumentCacheFilter implements Filter {
 

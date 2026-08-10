@@ -9,12 +9,17 @@ import com.itextpdf.text.Phrase;
 import com.itextpdf.text.pdf.PdfPCell;
 import com.itextpdf.text.pdf.PdfPTable;
 
+/**
+ * Class providing functionality for PDFCellUtils.
+ *
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
+ */
 public final class PDFCellUtils {
 
 	/**
  * Implementation of p d f cell utils functionality.
  *
- * [@Loong Wan](https://github.com/loong10k)
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  */
 	public static PdfPCell getCell(String content) {
 		return getCell(content, 1, PdfPCell.ALIGN_CENTER,PdfPCell.ALIGN_MIDDLE, new Font());

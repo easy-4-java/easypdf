@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2010-2020, wandalong (hnxyhcwdl1003@163.com).
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
@@ -19,7 +19,7 @@ package io.github.easy4j.pdf.core;
  * *******************************************************************
  * @className	： D07_ParseHtmlAsian
  * @description	： TODO(描述这个类的作用)
- * @author 		： <a href="mailto:hnxyhcwdl1003@163.com">wandalong</a>
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  * @date		： Jan 16, 2017 12:26:38 PM
  * @version 	V1.0 
  * *******************************************************************
@@ -39,7 +39,7 @@ import com.itextpdf.tool.xml.XMLWorkerHelper;
 /**
  * Implementation of d07_ parse html asian functionality.
  *
- * [@Loong Wan](https://github.com/loong10k)
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  */
 public class D07_ParseHtmlAsian {
 

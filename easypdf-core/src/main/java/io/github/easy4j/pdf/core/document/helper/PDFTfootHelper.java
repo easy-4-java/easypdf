@@ -13,6 +13,11 @@ import com.jeefw.fastkit.beanutils.JavaBeanUtils;
 import io.github.easy4j.pdf.core.document.elements.ItextXMLElement;
 import io.github.easy4j.pdf.core.document.style.PDFStyleTransformer;
 import com.jeefw.fastxml.jdom.xhtml.css.ElementStyleRender;
+/**
+ * Class providing functionality for PDFTfootHelper.
+ *
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
+ */
 public final class PDFTfootHelper{
 
 	private static PDFTfootHelper instance = null;

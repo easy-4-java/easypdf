@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2018, vindell (https://github.com/vindell).
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
@@ -35,7 +35,7 @@ import jetbrick.template.JetEngine;
 /**
  * Implementation of wordprocessing m l jetbrick template extending WordprocessingMLTemplate.
  *
- * [@Loong Wan](https://github.com/loong10k)
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  */
 public class WordprocessingMLJetbrickTemplate extends WordprocessingMLTemplate {
 	

@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2010-2020, wandalong (hnxyhcwdl1003@163.com).
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
@@ -21,7 +21,7 @@ package io.github.easy4j.pdf.core.fonts;
 /**
  * Implementation of base font factory functionality.
  *
- * [@Loong Wan](https://github.com/loong10k)
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  */
 public class BaseFontFactory {
 	

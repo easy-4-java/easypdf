@@ -10,6 +10,11 @@ import io.github.easy4j.pdf.core.document.resolver.ItextAlignmentResolver;
 import io.github.easy4j.pdf.core.document.resolver.ItextColorResolver;
 import io.github.easy4j.pdf.core.document.resolver.ItextFontResolver;
 @SuppressWarnings({"serial"})
+/**
+ * Class providing functionality for ItextXMLElement.
+ *
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
+ */
 public abstract class ItextXMLElement extends XMLCSSElement{
 	
 	protected String clazz ="";
@@ -22,7 +27,7 @@ public abstract class ItextXMLElement extends XMLCSSElement{
 	/**
  * Implementation of itext x m l element extending XMLCSSElement.
  *
- * [@Loong Wan](https://github.com/loong10k)
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  */
 	public Font getFont(){
 		try {

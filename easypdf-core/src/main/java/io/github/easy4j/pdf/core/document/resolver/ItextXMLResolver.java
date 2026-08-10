@@ -13,7 +13,7 @@ import com.jeefw.fastxml.jdom.xhtml.sax.XMLElementResolver;
  * 
  * @className: XMLResolver
  * @description: XML配置文件解析器
- * @author : <a href="mailto:hnxyhcwdl1003@163.com">wandalong</a>
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  * @date : 上午9:39:10 2013-8-14
  * @modify by:
  * @modify date :
@@ -32,7 +32,7 @@ public class ItextXMLResolver {
 	/**
  * Implementation of itext x m l resolver functionality.
  *
- * [@Loong Wan](https://github.com/loong10k)
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  */
 	public Map<String, ItextXMLElement> resolver(String path)throws JDOMException, IOException {
 		// 解析XML

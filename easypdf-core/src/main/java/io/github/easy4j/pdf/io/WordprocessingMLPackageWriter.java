@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2018, vindell (https://github.com/vindell).
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
@@ -42,6 +42,11 @@ import io.github.easy4j.pdf.utils.Docx4jUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Class providing functionality for WordprocessingMLPackageWriter.
+ *
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
+ */
 public class WordprocessingMLPackageWriter  {
 	
 	protected final Logger LOG = LoggerFactory.getLogger(this.getClass());
@@ -68,7 +73,7 @@ public class WordprocessingMLPackageWriter  {
 	/**
  * Implementation of wordprocessing m l package writer functionality.
  *
- * [@Loong Wan](https://github.com/loong10k)
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  */
 	public File writeToDocx(WordprocessingMLPackage wmlPackage) throws  IOException, Docx4JException{
 		Assert.notNull(wmlPackage, " wmlPackage is not specified!");

@@ -27,7 +27,7 @@ import io.github.easy4j.pdf.core.document.elements.ItextXMLElement;
 /**
  * Implementation of itext context extending AbstractContext.
  *
- * [@Loong Wan](https://github.com/loong10k)
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  */
 public class ItextContext extends AbstractContext {
 

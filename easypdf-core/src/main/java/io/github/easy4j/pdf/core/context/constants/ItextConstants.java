@@ -1,5 +1,10 @@
 package io.github.easy4j.pdf.core.context.constants;
 
+/**
+ * Class providing functionality for ItextConstants.
+ *
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
+ */
 public final class ItextConstants {
 
 	public static final String XSD_NAME = "beanmapping.xsd";
@@ -11,7 +16,7 @@ public final class ItextConstants {
 	/**
  * Implementation of itext constants functionality.
  *
- * [@Loong Wan](https://github.com/loong10k)
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  */
 	public static final String LOGXS_FILE_NAME = "/Logx.properties";
 	

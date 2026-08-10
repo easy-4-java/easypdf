@@ -9,7 +9,7 @@ import javax.servlet.http.HttpServletResponse;
 /**
  * Implementation of cache response stream extending ServletOutputStream.
  *
- * [@Loong Wan](https://github.com/loong10k)
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  */
 public class CacheResponseStream extends ServletOutputStream {
 	

@@ -18,7 +18,7 @@ import io.github.easy4j.pdf.core.document.events.PDFPageEvent;
   * @package io.github.easy4j.pdf.core.document.helper
   * @className: PDFWriterHelper
   * @description: TODO
-  * @author : <a href="mailto:hnxyhcwdl1003@163.com">wandalong</a>
+  * @author <a href="https://github.com/loong10k">Loong Wan</a>
   * @date : 2014-1-14
   * @time : 上午11:47:08
   */
@@ -94,7 +94,7 @@ public final class PDFWriterHelper {
 					password = PatternFormatUtils.format(password, attrs);
 					//打开文档之前还要做的一件事情就是加密（如果你希望该文档加密），要达到这个目的，你可以使用下面的方法
 					writer.setEncryption(user.getBytes(), password.getBytes(),PdfWriter.ALLOW_SCREENREADERS,PdfWriter.STANDARD_ENCRYPTION_128);
-					/*strength 是下面两个常量之一： 
+					/**strength 是下面两个常量之一： 
 					PdfWriter.STRENGTH40BITS: 40 位 
 					PdfWriter.STRENGTH128BITS: 128位 (Acrobat Reader 5.0及以上版本支持) 
 					UserPassword和ownerPassword 可以为空或零长度， 这种情况下， ownerPassword 将被随机的字符串代替 

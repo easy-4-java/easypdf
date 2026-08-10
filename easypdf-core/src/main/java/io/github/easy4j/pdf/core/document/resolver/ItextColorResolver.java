@@ -12,7 +12,7 @@ import com.jeefw.fastxml.jdom.xhtml.ColorResolver;
  * 
  * @className: FontParser
  * @description: 字体解析器：必须是定义过的字体
- * @author : <a href="mailto:hnxyhcwdl1003@163.com">wandalong</a>
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  * @date : 上午10:31:53 2013-8-16
  * @modify by:
  * @modify date :

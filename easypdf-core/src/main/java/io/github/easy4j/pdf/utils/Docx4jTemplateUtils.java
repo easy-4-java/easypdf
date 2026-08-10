@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2018, vindell (https://github.com/vindell).
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
@@ -35,13 +35,13 @@ import org.slf4j.LoggerFactory;
 /**
  * Implementation of docx4j template utils functionality.
  *
- * [@Loong Wan](https://github.com/loong10k)
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  */
 public final class Docx4jTemplateUtils {
  
     private static final Logger logger = LoggerFactory.getLogger(Docx4jUtils.class);
  
-    /*
+    /**
      * 替换变量并下载word文档
      *
      * @param inputStream
@@ -68,7 +68,7 @@ public final class Docx4jTemplateUtils {
         }
     }
  
-    /*
+    /**
      * 替换变量并输出word文档
      * @param inputStream
      * @param map
@@ -95,7 +95,7 @@ public final class Docx4jTemplateUtils {
     }
  
  
-    /*
+    /**
      * cleanDocumentPart
      *
      * @param documentPart
@@ -114,7 +114,7 @@ public final class Docx4jTemplateUtils {
         return true;
     }
  
-    /*
+    /**
      * 清扫 docx4j 模板变量字符,通常以${variable}形式
      * <p>
      * XXX: 主要在上传模板时处理一下, 后续

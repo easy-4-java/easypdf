@@ -525,6 +525,8 @@
         <commons-io.version>2.22.0</commons-io.version>
         <commons-lang3.version>3.20.0</commons-lang3.version>
         <commons-logging.version>1.2</commons-logging.version>
+        <!-- commons-imaging：钉死版本，覆盖 iText cleanup:2.0.5 传递依赖里硬编码的 1.0-SNAPSHOT（仅存在于 Apache Snapshots 仓库，Maven Central 无法解析） -->
+        <commons-imaging.version>1.0.0-alpha6</commons-imaging.version>
         <docx4j-export-fo.version>11.5.2</docx4j-export-fo.version>
         <docx4j-importxhtml.version>11.4.8</docx4j-importxhtml.version>
         <docx4j-jaxb.version>${docx4j.version}</docx4j-jaxb.version>
@@ -778,6 +780,13 @@
                 <groupId>com.itextpdf</groupId>
                 <artifactId>cleanup</artifactId>
                 <version>${itext-cleanup.version}</version>
+            </dependency>
+            <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-imaging -->
+            <!-- iText cleanup:2.0.5 在自身 pom 中硬编码了 commons-imaging:1.0-SNAPSHOT，该 SNAPSHOT 仅存在于 Apache Snapshots 仓库、无法从 Maven Central 解析；此处通过 dependencyManagement 钉死为可用的 1.0.0-alpha6，覆盖该传递依赖版本 -->
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-imaging</artifactId>
+                <version>${commons-imaging.version}</version>
             </dependency>
             <!-- https://mvnrepository.com/artifact/com.itextpdf/xfa-itext-pdfa -->
             <dependency>

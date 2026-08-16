@@ -554,7 +554,7 @@
         <servlet-api.version>3.0.1</servlet-api.version>
         <slf4j.version>2.0.18</slf4j.version>
         <thymeleaf.version>3.0.11.RELEASE</thymeleaf.version>
-        <velocity-tools.version>2.0</velocity-tools.version>
+        <velocity-tools.version>3.1</velocity-tools.version>
         <velocity.version>2.2</velocity.version>
         <webit-script.version>1.5.2</webit-script.version>
         <!-- Maven Plugin versions -->
@@ -887,25 +887,11 @@
                 <artifactId>velocity-engine-scripting</artifactId>
                 <version>${velocity.version}</version>
             </dependency>
-            <!-- https://mvnrepository.com/artifact/org.apache.velocity/velocity-tools -->
+            <!-- https://mvnrepository.com/artifact/org.apache.velocity.tools/velocity-tools-generic -->
             <dependency>
-                <groupId>org.apache.velocity</groupId>
-                <artifactId>velocity-tools</artifactId>
+                <groupId>org.apache.velocity.tools</groupId>
+                <artifactId>velocity-tools-generic</artifactId>
                 <version>${velocity-tools.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <artifactId>struts-core</artifactId>
-                        <groupId>org.apache.struts</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>struts-taglib</artifactId>
-                        <groupId>org.apache.struts</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>struts-tiles</artifactId>
-                        <groupId>org.apache.struts</groupId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <!-- For Webit -->
             <dependency>

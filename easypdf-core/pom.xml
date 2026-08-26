@@ -49,22 +49,6 @@
 
 	<build>
 		<plugins>
-			<!--
-			  Legacy iText5/XML engine under io.github.easy4j.pdf.core depends on
-			  unavailable com.jeefw.fastkit/fastxml; keep sources in repo but skip compile.
-			-->
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<configuration>
-					<excludes>
-						<exclude>**/pdf/core/**</exclude>
-					</excludes>
-					<testExcludes>
-						<exclude>**/*</exclude>
-					</testExcludes>
-				</configuration>
-			</plugin>
 		</plugins>
 	</build>
 

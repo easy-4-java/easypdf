@@ -207,4 +207,22 @@
 
 	</dependencies>
 
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<!-- 历史遗留的 demo 示例类（非测试、依赖旧 iText5/旧 JDK API，无法编译） -->
+					<testExcludes>
+						<exclude>**/Demo4HTMLCn.java</exclude>
+						<exclude>**/HtmlConverter.java</exclude>
+						<exclude>**/HtmlToDOCDemo.java</exclude>
+						<exclude>**/WebPageToImage.java</exclude>
+					</testExcludes>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
 </project>

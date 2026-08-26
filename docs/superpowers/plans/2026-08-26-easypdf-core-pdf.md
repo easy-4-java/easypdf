@@ -1,6 +1,6 @@
 # easypdf-core PDF 重构实现计划（Phase 2：PdfTemplate + html2pdf 管线 + legacy 处置）
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** 把 easypdf-core 从"docx4j Word 工具 + iText 5 遗留混合体"收敛为纯 PDF 核心：删除 fastpdf 时代的 iText 5 遗留（`io.github.easy4j.pdf.core.**` 孤岛，55 个主类 + 55 个测试 + 3 个配置文件），移除 compiler 排除配置恢复测试执行，建立 `PdfTemplate` 抽象 + `HtmlPdfConverter`（iText 7 html2pdf + 中文字体 FontProvider）管线，用 golden 测试锁定中文 PDF 质量。
 
@@ -31,7 +31,7 @@
 - Consumes: 无
 - Produces: core 模块无 compiler 排除；`io.github.easy4j.pdf.core.**` 不再存在；剩余代码（顶层 3 类 + io/wml/utils/fonts/handler/bus 包）可独立编译
 
-- [ ] **Step 1: 删除 legacy 源码与配置**
+- [x] **Step 1: 删除 legacy 源码与配置**
 
 ```bash
 cd /Users/wandl/workspaces/workspace-github-easy-4-java/easypdf
@@ -42,7 +42,7 @@ git rm easypdf-core/src/main/resources/default-config.properties \
        easypdf-core/src/main/resources/itext-config.dtd
 ```
 
-- [ ] **Step 2: 删除引用 core 包的测试**
+- [x] **Step 2: 删除引用 core 包的测试**
 
 ```bash
 # 先列出再删除
@@ -51,16 +51,16 @@ for f in $(find easypdf-core/src/test/java -name "*.java"); do
 done
 ```
 
-- [ ] **Step 3: 编辑 easypdf-core/pom.xml 移除 compiler 排除**
+- [x] **Step 3: 编辑 easypdf-core/pom.xml 移除 compiler 排除**
 
 删除 `easypdf-core/pom.xml` 中 `<build><plugins><plugin>maven-compiler-plugin` 配置块（`<excludes>` 与 `<testExcludes>` 整块删除）。
 
-- [ ] **Step 4: 验证 core 编译**
+- [x] **Step 4: 验证 core 编译**
 
 Run: `~/tools/apache-maven-4.0.0-rc-6/bin/mvn -B -ntp -pl easypdf-core clean compile 2>&1 | grep -E "ERROR|BUILD"`
 Expected: BUILD SUCCESS（无 core 包引用残留）
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add -A
@@ -79,25 +79,25 @@ git commit -m "refactor(core): remove legacy iText5 pdf.core sources, tests and 
 - Consumes: Task A（compiler 排除已移除）
 - Produces: core 模块测试真实执行；测试基线记录
 
-- [ ] **Step 1: 编译全部保留测试**
+- [x] **Step 1: 编译全部保留测试**
 
 Run: `~/tools/apache-maven-4.0.0-rc-6/bin/mvn -B -ntp -pl easypdf-core clean test-compile 2>&1 | grep -E "Compiling|ERROR|BUILD"`
 Expected: 观察 33 个真实测试 + 41 个 demo 类的编译结果
 
-- [ ] **Step 2: 排除编译失败的 demo 类（如存在）**
+- [x] **Step 2: 排除编译失败的 demo 类（如存在）**
 
 对编译失败且无 `@Test` 的 demo 类（如 `Docx4j_创建批注_S3_Test`、`CreateWordprocessingMLDocument` 等 docx4j 示例），在 `easypdf-core/pom.xml` 的 compiler 配置加 testExcludes 精准排除（保留文件）。
 
-- [ ] **Step 3: 运行测试**
+- [x] **Step 3: 运行测试**
 
 Run: `~/tools/apache-maven-4.0.0-rc-6/bin/mvn -B -ntp -pl easypdf-core clean test 2>&1 | grep -E "Tests run:|BUILD|FAIL"`
 Expected: 真实测试运行；失败项进入 Step 4
 
-- [ ] **Step 4: 修复失败测试（如有）**
+- [x] **Step 4: 修复失败测试（如有）**
 
 对每个失败：读取 surefire 报告区分环境性问题（字体/平台路径）与真实缺陷；修复测试或测试资源，**不修改生产逻辑**；重跑直至通过。
 
-- [ ] **Step 5: 记录基线 + Commit**
+- [x] **Step 5: 记录基线 + Commit**
 
 ```bash
 git add -A
@@ -119,7 +119,7 @@ git commit -m "refactor(core): restore test execution after legacy removal"
   - `public static void registerFont(String fontPath)` —— 服务器缺字体时的扩展点
   - `public static String pdfToText(File pdf)` —— 逐页文本提取（供 PdfTemplate 与 Markdown 转换复用）
 
-- [ ] **Step 1: core pom 添加 html2pdf 依赖**
+- [x] **Step 1: core pom 添加 html2pdf 依赖**
 
 在 `easypdf-core/pom.xml` 的 iText 依赖区添加：
 ```xml
@@ -129,7 +129,7 @@ git commit -m "refactor(core): restore test execution after legacy removal"
 </dependency>
 ```
 
-- [ ] **Step 2: 写失败测试（golden：中文 PDF）**
+- [x] **Step 2: 写失败测试（golden：中文 PDF）**
 
 `HtmlPdfConverterTest.java`：
 ```java
@@ -173,12 +173,12 @@ class HtmlPdfConverterTest {
 }
 ```
 
-- [ ] **Step 3: 运行测试确认失败**
+- [x] **Step 3: 运行测试确认失败**
 
 Run: `~/tools/apache-maven-4.0.0-rc-6/bin/mvn -B -ntp -pl easypdf-core -am test -Dtest=HtmlPdfConverterTest`
 Expected: FAIL（类不存在）
 
-- [ ] **Step 4: 实现 HtmlPdfConverter**
+- [x] **Step 4: 实现 HtmlPdfConverter**
 
 ```java
 package io.github.easy4j.pdf.core.convert;
@@ -234,12 +234,12 @@ public final class HtmlPdfConverter {
 }
 ```
 
-- [ ] **Step 5: 运行测试确认通过**
+- [x] **Step 5: 运行测试确认通过**
 
 Run: `~/tools/apache-maven-4.0.0-rc-6/bin/mvn -B -ntp -pl easypdf-core -am test -Dtest=HtmlPdfConverterTest`
 Expected: PASS（2 tests，中文断言通过）
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add easypdf-core/pom.xml easypdf-core/src/main/java/io/github/easy4j/pdf/core/convert/HtmlPdfConverter.java easypdf-core/src/test/java/io/github/easy4j/pdf/core/convert/HtmlPdfConverterTest.java
@@ -260,7 +260,7 @@ git commit -m "feat(core): add HtmlPdfConverter with html2pdf and Chinese font s
   - `public abstract class PdfTemplate` —— `public abstract void process(String template, Map<String, Object> variables, OutputStream out) throws Exception;` + 便捷方法 `public ByteArrayOutputStream process(String template, Map<String, Object> variables) throws Exception`
   - 后续引擎适配器（freemarker 等）继承此抽象，`render(template, vars)` 产出 HTML 后委托 `HtmlPdfConverter.htmlToPdf`
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 `PdfTemplateTest.java`：
 ```java
@@ -311,12 +311,12 @@ class PdfTemplateTest {
 }
 ```
 
-- [ ] **Step 2: 运行测试确认失败**
+- [x] **Step 2: 运行测试确认失败**
 
 Run: `~/tools/apache-maven-4.0.0-rc-6/bin/mvn -B -ntp -pl easypdf-core -am test -Dtest=PdfTemplateTest`
 Expected: FAIL（PdfTemplate 不存在）
 
-- [ ] **Step 3: 实现 PdfTemplate**
+- [x] **Step 3: 实现 PdfTemplate**
 
 ```java
 package io.github.easy4j.pdf;
@@ -350,12 +350,12 @@ public abstract class PdfTemplate {
 }
 ```
 
-- [ ] **Step 4: 运行测试确认通过**
+- [x] **Step 4: 运行测试确认通过**
 
 Run: `~/tools/apache-maven-4.0.0-rc-6/bin/mvn -B -ntp -pl easypdf-core -am test -Dtest=PdfTemplateTest`
 Expected: PASS（2 tests）
 
-- [ ] **Step 5: 全量回归 + Commit**
+- [x] **Step 5: 全量回归 + Commit**
 
 Run: `~/tools/apache-maven-4.0.0-rc-6/bin/mvn -B -ntp -pl easypdf-core -am clean verify`
 Expected: BUILD SUCCESS
@@ -376,40 +376,40 @@ git commit -m "feat(core): add PdfTemplate abstraction for PDF template renderin
 - Consumes: Task A-D 产物
 - Produces: 三分支均具备 PdfTemplate + HtmlPdfConverter 管线且全量 verify 通过
 
-- [ ] **Step 1: 3.0.x 全量验证**
+- [x] **Step 1: 3.0.x 全量验证**
 
 Run: `~/tools/apache-maven-4.0.0-rc-6/bin/mvn -B -ntp clean verify`
 Expected: BUILD SUCCESS（core 测试 + xhtml 19 + engine 测试全绿）
 
-- [ ] **Step 2: 同步到 1.0.x**
+- [x] **Step 2: 同步到 1.0.x**
 
 ```bash
 git checkout feature/1.0.x
 # 应用：删除 core 包/测试/配置；core pom 移除排除 + 加 html2pdf；新增 HtmlPdfConverter/PdfTemplate + 测试
 ```
 
-- [ ] **Step 3: 验证 1.0.x**
+- [x] **Step 3: 验证 1.0.x**
 
 Run: `/opt/homebrew/bin/mvn -B -ntp clean verify`
 Expected: BUILD SUCCESS
 
-- [ ] **Step 4: Commit 1.0.x**
+- [x] **Step 4: Commit 1.0.x**
 
 ```bash
 git add -A
 git commit -m "refactor(core): sync PDF core rework from 3.0.x — remove iText5 legacy, add PdfTemplate and HtmlPdfConverter"
 ```
 
-- [ ] **Step 5: 同步到 2.0.x**（同 Step 2）
+- [x] **Step 5: 同步到 2.0.x**（同 Step 2）
 
-- [ ] **Step 6: 验证 2.0.x**
+- [x] **Step 6: 验证 2.0.x**
 
 Run: `/opt/homebrew/bin/mvn -B -ntp clean verify`
 Expected: BUILD SUCCESS
 
-- [ ] **Step 7: Commit 2.0.x**（同 Step 4 信息）
+- [x] **Step 7: Commit 2.0.x**（同 Step 4 信息）
 
-- [ ] **Step 8: 回 3.0.x 推送三分支**
+- [x] **Step 8: 回 3.0.x 推送三分支**
 
 ```bash
 git checkout feature/3.0.x

@@ -1,6 +1,6 @@
 # easypdf 引擎适配器与 webmvc 迁移计划（Phase 3）
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** 把 9 个模板引擎适配器从 docx4j Word 输出（包装 `WordprocessingMLHtmlTemplate`）迁移到 PDF 输出（`PdfTemplate` + html2pdf 管线），并为 webmvc 提供 `PdfTemplateView`/`PdfViewResolver`，完成 easypdf "引擎渲染 HTML → PDF"的主链路。
 
@@ -31,7 +31,7 @@
   - `public abstract class AbstractStringTemplateWrappingPdfTemplate extends PdfTemplate` —— 构造器 `protected AbstractStringTemplateWrappingPdfTemplate()`；`process(String template, Map vars, OutputStream out)` 已实现（`render(template, vars)` → `HtmlPdfConverter.htmlToPdf(html, out)`）；`protected abstract String render(String template, Map<String, Object> variables) throws Exception;`（引擎特有渲染）
   - Task 2-3 的 9 个引擎适配器继承此基类
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 `AbstractStringTemplateWrappingPdfTemplateTest.java`：
 ```java
@@ -81,12 +81,12 @@ class AbstractStringTemplateWrappingPdfTemplateTest {
 }
 ```
 
-- [ ] **Step 2: 运行测试确认失败**
+- [x] **Step 2: 运行测试确认失败**
 
 Run: `~/tools/apache-maven-4.0.0-rc-6/bin/mvn -B -ntp -pl easypdf-core -am test -Dtest=AbstractStringTemplateWrappingPdfTemplateTest`
 Expected: FAIL（类不存在）
 
-- [ ] **Step 3: 实现基类**
+- [x] **Step 3: 实现基类**
 
 ```java
 package io.github.easy4j.pdf.template;
@@ -121,12 +121,12 @@ public abstract class AbstractStringTemplateWrappingPdfTemplate extends PdfTempl
 }
 ```
 
-- [ ] **Step 4: 运行测试确认通过**
+- [x] **Step 4: 运行测试确认通过**
 
 Run: `~/tools/apache-maven-4.0.0-rc-6/bin/mvn -B -ntp -pl easypdf-core -am test -Dtest=AbstractStringTemplateWrappingPdfTemplateTest`
 Expected: PASS（2 tests）
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add easypdf-core/src/main/java/io/github/easy4j/pdf/template/AbstractStringTemplateWrappingPdfTemplate.java easypdf-core/src/test/java/io/github/easy4j/pdf/template/AbstractStringTemplateWrappingPdfTemplateTest.java
@@ -147,7 +147,7 @@ git commit -m "feat(engines): add AbstractStringTemplateWrappingPdfTemplate base
 - Produces: `FreemarkerPdfTemplate` —— 构造器（无参/`(boolean landscape, boolean altChunk)` 保留兼容签名但忽略布局参数）+ `getEngine()/setEngine()/setFreemarkerSettings/setPreTemplateLoaders/setPostTemplateLoaders/setDefaultEncoding/setFreemarkerVariables`（从旧类复制）+ `render(String, Map)` 用 `getEngine().getTemplate(template).process(variables, writer)` 产出 HTML
 - 其余 8 个引擎（Task 3）按同一模式
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 `FreemarkerPdfTemplateTest.java`：
 ```java
@@ -188,12 +188,12 @@ class FreemarkerPdfTemplateTest {
 }
 ```
 
-- [ ] **Step 2: 运行测试确认失败**
+- [x] **Step 2: 运行测试确认失败**
 
 Run: `~/tools/apache-maven-4.0.0-rc-6/bin/mvn -B -ntp -pl easypdf-freemarker -am test -Dtest=FreemarkerPdfTemplateTest`
 Expected: FAIL（类不存在）
 
-- [ ] **Step 3: 实现 FreemarkerPdfTemplate**
+- [x] **Step 3: 实现 FreemarkerPdfTemplate**
 
 从 `WordprocessingMLFreemarkerTemplate` 复制引擎配置代码（`engine`/`freemarkerSettings`/`freemarkerVariables`/`templateLoaders`/`preTemplateLoaders`/`postTemplateLoaders`/`getInternalEngine()`/`getAggregateTemplateLoader()`/`postProcessTemplateLoaders()` 及全部 setter），差异仅两处：继承 `AbstractStringTemplateWrappingPdfTemplate` 而非 `WordprocessingMLTemplate`；删除 `mlHtmlTemplate` 字段与构造器，`render` 实现为：
 
@@ -337,16 +337,16 @@ public class FreemarkerPdfTemplate extends AbstractStringTemplateWrappingPdfTemp
 }
 ```
 
-- [ ] **Step 4: 修改 freemarker pom 依赖**
+- [x] **Step 4: 修改 freemarker pom 依赖**
 
 `easypdf-freemarker/pom.xml`：`<artifactId>easypdf-xhtml</artifactId>` 改为 `<artifactId>easypdf-core</artifactId>`。
 
-- [ ] **Step 5: 运行测试确认通过**
+- [x] **Step 5: 运行测试确认通过**
 
 Run: `~/tools/apache-maven-4.0.0-rc-6/bin/mvn -B -ntp -pl easypdf-freemarker -am test -Dtest=FreemarkerPdfTemplateTest`
 Expected: PASS（1 test）
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add easypdf-freemarker
@@ -382,16 +382,16 @@ git commit -m "feat(engines): add FreemarkerPdfTemplate rendering HTML templates
   - Webit：`WebitEngine` + `WebitTemplate.merge(Map, Writer)`
   - JSP：`JspTemplateImpl`（复用 easypdf-jsp/engine 包内现有 JspEngine 抽象，render 走 `JspEngine.render(template, vars)`）
 
-- [ ] **Step 1: 逐个迁移（每个引擎：复制旧类引擎代码 → 改继承 → render 实现 → pom 依赖 → 测试）**
+- [x] **Step 1: 逐个迁移（每个引擎：复制旧类引擎代码 → 改继承 → render 实现 → pom 依赖 → 测试）**
 
 对每个引擎重复 Task 2 的 Step 1-5 模式，测试断言统一为：渲染该引擎的简单模板（如 `<html><body><h1>${var}</h1></body></html>` 的引擎语法版本）→ 输出以 `%PDF-` 开头。模板资源放各模块 `src/test/resources/tpl/`。
 
-- [ ] **Step 2: 每引擎验证**
+- [x] **Step 2: 每引擎验证**
 
 Run: `~/tools/apache-maven-4.0.0-rc-6/bin/mvn -B -ntp -pl easypdf-{engine} -am test -Dtest={Engine}PdfTemplateTest`
 Expected: PASS
 
-- [ ] **Step 3: 汇总提交**
+- [x] **Step 3: 汇总提交**
 
 ```bash
 git add easypdf-velocity easypdf-thymeleaf easypdf-beetl easypdf-rythm easypdf-jetbrick easypdf-httl easypdf-webit easypdf-jsp
@@ -414,7 +414,7 @@ git commit -m "feat(engines): migrate remaining 8 template engines to PDF output
   - `public class PdfTemplateView extends AbstractView` —— `setTemplate(PdfTemplate)`/`setTemplateName(String)`；`renderMergedOutputModel` 用 `createTemporaryOutputStream()` → `template.process(templateName, model, baos)` → `writeToResponse(response, baos)`
   - `public class PdfViewResolver implements ViewResolver` —— `resolveViewName` 返回 `PdfTemplateView`（PdfTemplate 通过 setter 注入）
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 `PdfTemplateViewTest.java`（用 `MockHttpServletResponse`，验证 `application/pdf` 内容类型与 PDF 魔数）：
 ```java
@@ -457,12 +457,12 @@ class PdfTemplateViewTest {
 }
 ```
 
-- [ ] **Step 2: 运行测试确认失败**
+- [x] **Step 2: 运行测试确认失败**
 
 Run: `~/tools/apache-maven-4.0.0-rc-6/bin/mvn -B -ntp -pl easypdf-webmvc -am test -Dtest=PdfTemplateViewTest`
 Expected: FAIL（类不存在）
 
-- [ ] **Step 3: 实现 PdfTemplateView 与 PdfViewResolver**
+- [x] **Step 3: 实现 PdfTemplateView 与 PdfViewResolver**
 
 ```java
 package io.github.easy4j.pdf.webmvc;
@@ -544,12 +544,12 @@ public class PdfViewResolver implements ViewResolver {
 }
 ```
 
-- [ ] **Step 4: 运行测试确认通过**
+- [x] **Step 4: 运行测试确认通过**
 
 Run: `~/tools/apache-maven-4.0.0-rc-6/bin/mvn -B -ntp -pl easypdf-webmvc -am test -Dtest=PdfTemplateViewTest`
 Expected: PASS（1 test）
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add easypdf-webmvc
@@ -567,40 +567,40 @@ git commit -m "feat(webmvc): add PdfTemplateView and PdfViewResolver for PDF res
 - Consumes: Task 1-4 产物
 - Produces: 三分支均具备 9 个 `{Engine}PdfTemplate` + webmvc 视图 + 基类，全量 verify 通过
 
-- [ ] **Step 1: 3.0.x 全量验证**
+- [x] **Step 1: 3.0.x 全量验证**
 
 Run: `~/tools/apache-maven-4.0.0-rc-6/bin/mvn -B -ntp clean verify`
 Expected: BUILD SUCCESS；记录测试基线（≥ 246 + 新引擎测试）
 
-- [ ] **Step 2: 同步到 1.0.x**（对比整合：引擎旧类保留、新类与 pom 变更移植）
+- [x] **Step 2: 同步到 1.0.x**（对比整合：引擎旧类保留、新类与 pom 变更移植）
 
 ```bash
 git checkout feature/1.0.x
 # 移植：core 基类 + 测试；9 个 {Engine}PdfTemplate + 测试；9 个引擎 pom 依赖变更；webmvc 新增文件（1.0.x 无 webmvc 模块则跳过）
 ```
 
-- [ ] **Step 3: 验证 1.0.x**
+- [x] **Step 3: 验证 1.0.x**
 
 Run: `/opt/homebrew/bin/mvn -B -ntp clean verify`
 Expected: BUILD SUCCESS
 
-- [ ] **Step 4: Commit 1.0.x**
+- [x] **Step 4: Commit 1.0.x**
 
 ```bash
 git add -A
 git commit -m "feat(engines): sync engine PDF migration from 3.0.x"
 ```
 
-- [ ] **Step 5: 同步到 2.0.x**（同 Step 2）
+- [x] **Step 5: 同步到 2.0.x**（同 Step 2）
 
-- [ ] **Step 6: 验证 2.0.x**
+- [x] **Step 6: 验证 2.0.x**
 
 Run: `/opt/homebrew/bin/mvn -B -ntp clean verify`
 Expected: BUILD SUCCESS
 
-- [ ] **Step 7: Commit 2.0.x**（同 Step 4 信息）
+- [x] **Step 7: Commit 2.0.x**（同 Step 4 信息）
 
-- [ ] **Step 8: 回 3.0.x 推送三分支**
+- [x] **Step 8: 回 3.0.x 推送三分支**
 
 ```bash
 git checkout feature/3.0.x

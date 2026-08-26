@@ -1,6 +1,6 @@
 # easypdf Markdown ↔ PDF 转换实现计划（Phase 2）
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** 为 easypdf 补齐 Markdown ↔ PDF 快速双向转换，镜像 easydoc 的 Markdown ↔ docx 方案：复用现有 HTML 管线、零新引擎——`markdownToPdf` 走「flexmark 解析 MD → HTML → iText 7 html2pdf → PDF」，`pdfToMarkdown` 走「iText PdfTextExtractor 提取文本 → 结构化 → Markdown」。
 
@@ -31,14 +31,14 @@
 **Interfaces:**
 - Produces: `com.vladsch.flexmark:flexmark:0.64.8` 与 `com.vladsch.flexmark:flexmark-html:0.64.8` 可由 easypdf-xhtml 解析（供 Task 2 使用）
 
-- [ ] **Step 1: 根 pom 加版本属性**
+- [x] **Step 1: 根 pom 加版本属性**
 
 在 `pom.xml` properties 区（`<jsoup.version>` 附近）加：
 ```xml
 <flexmark.version>0.64.8</flexmark.version>
 ```
 
-- [ ] **Step 2: 根 pom dependencyManagement 加 flexmark**
+- [x] **Step 2: 根 pom dependencyManagement 加 flexmark**
 
 在 dependencyManagement 的 jsoup 条目附近加：
 ```xml
@@ -56,7 +56,7 @@
 </dependency>
 ```
 
-- [ ] **Step 3: easypdf-xhtml/pom.xml 加依赖**
+- [x] **Step 3: easypdf-xhtml/pom.xml 加依赖**
 
 在 `</dependencies>` 前加：
 ```xml
@@ -71,12 +71,12 @@
 </dependency>
 ```
 
-- [ ] **Step 4: 验证依赖解析**
+- [x] **Step 4: 验证依赖解析**
 
 Run: `~/tools/apache-maven-4.0.0-rc-6/bin/mvn -B -ntp -pl easypdf-xhtml validate 2>&1 | grep -E "ERROR|BUILD"`
 Expected: BUILD SUCCESS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add pom.xml easypdf-xhtml/pom.xml
@@ -95,7 +95,7 @@ git commit -m "feat(markdown): add flexmark-java dependencies for markdown parsi
 - Produces: `public static String mdToHtml(String markdown)` —— CommonMark + GFM 扩展（表格/删除线/任务列表）渲染为 HTML 字符串，供 Task 3/4 的 html2pdf 消费
 - Produces: `public static String textToMarkdown(String text)` —— PDF 提取的纯文本 → 简单结构化 Markdown（段落合并、空行分隔），供 Task 4 的 pdfToMarkdown 使用
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 `MarkdownConverterTest.java`：
 ```java
@@ -134,12 +134,12 @@ class MarkdownConverterTest {
 }
 ```
 
-- [ ] **Step 2: 运行测试确认失败**
+- [x] **Step 2: 运行测试确认失败**
 
 Run: `~/tools/apache-maven-4.0.0-rc-6/bin/mvn -B -ntp -pl easypdf-xhtml -am test -Dtest=MarkdownConverterTest`
 Expected: FAIL（MarkdownConverter 类不存在）
 
-- [ ] **Step 3: 实现 MarkdownConverter**
+- [x] **Step 3: 实现 MarkdownConverter**
 
 ```java
 package io.github.easy4j.pdf.xhtml.convert;
@@ -193,12 +193,12 @@ public final class MarkdownConverter {
 }
 ```
 
-- [ ] **Step 4: 运行测试确认通过**
+- [x] **Step 4: 运行测试确认通过**
 
 Run: `~/tools/apache-maven-4.0.0-rc-6/bin/mvn -B -ntp -pl easypdf-xhtml -am test -Dtest=MarkdownConverterTest`
 Expected: PASS（4 tests）
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add easypdf-xhtml/src/main/java/io/github/easy4j/pdf/xhtml/convert/MarkdownConverter.java easypdf-xhtml/src/test/java/io/github/easy4j/pdf/xhtml/convert/MarkdownConverterTest.java
@@ -220,7 +220,7 @@ git commit -m "feat(markdown): add MarkdownConverter with flexmark mdToHtml and 
   - `public static void registerFont(String fontPath)` —— 追加注册字体（服务器无中文字体时的扩展点）
   - `public static String pdfToText(File pdf)` —— 逐页 PdfTextExtractor 提取文本（供 Task 4 pdfToMarkdown 使用）
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 `HtmlPdfConverterTest.java`：
 ```java
@@ -265,12 +265,12 @@ class HtmlPdfConverterTest {
 }
 ```
 
-- [ ] **Step 2: 运行测试确认失败**
+- [x] **Step 2: 运行测试确认失败**
 
 Run: `~/tools/apache-maven-4.0.0-rc-6/bin/mvn -B -ntp -pl easypdf-xhtml -am test -Dtest=HtmlPdfConverterTest`
 Expected: FAIL（类不存在）
 
-- [ ] **Step 3: 实现 HtmlPdfConverter**
+- [x] **Step 3: 实现 HtmlPdfConverter**
 
 ```java
 package io.github.easy4j.pdf.xhtml.convert;
@@ -327,12 +327,12 @@ public final class HtmlPdfConverter {
 }
 ```
 
-- [ ] **Step 4: 运行测试确认通过**
+- [x] **Step 4: 运行测试确认通过**
 
 Run: `~/tools/apache-maven-4.0.0-rc-6/bin/mvn -B -ntp -pl easypdf-xhtml -am test -Dtest=HtmlPdfConverterTest`
 Expected: PASS（2 tests）。若中文断言失败：检查系统是否有 CJK 字体（macOS 默认有 PingFang；`fc-list :lang=zh` 可查 Linux）
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add easypdf-xhtml/src/main/java/io/github/easy4j/pdf/xhtml/convert/HtmlPdfConverter.java easypdf-xhtml/src/test/java/io/github/easy4j/pdf/xhtml/convert/HtmlPdfConverterTest.java
@@ -353,7 +353,7 @@ git commit -m "feat(markdown): add HtmlPdfConverter with html2pdf rendering and 
   - `public static void markdownToPdf(String markdown, File output)` / `(String markdown, OutputStream out)` —— MD → PDF 一站式
   - `public static String pdfToMarkdown(File pdf)` / `(InputStream in)` —— PDF → Markdown（尽力而为）
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 `EasyPdfTest.java`（`EasyPdf` 直接调用 core 版 `HtmlPdfConverter`，不建 xhtml 版重复类）：
 ```java
@@ -406,12 +406,12 @@ class EasyPdfTest {
 }
 ```
 
-- [ ] **Step 2: 运行测试确认失败**
+- [x] **Step 2: 运行测试确认失败**
 
 Run: `~/tools/apache-maven-4.0.0-rc-6/bin/mvn -B -ntp -pl easypdf-xhtml -am test -Dtest=EasyPdfTest`
 Expected: FAIL（类不存在）
 
-- [ ] **Step 3: 实现 EasyPdf**
+- [x] **Step 3: 实现 EasyPdf**
 
 ```java
 package io.github.easy4j.pdf.xhtml.convert;
@@ -460,12 +460,12 @@ public final class EasyPdf {
 }
 ```
 
-- [ ] **Step 4: 运行测试确认通过**
+- [x] **Step 4: 运行测试确认通过**
 
 Run: `~/tools/apache-maven-4.0.0-rc-6/bin/mvn -B -ntp -pl easypdf-xhtml -am test -Dtest=EasyPdfTest`
 Expected: PASS（3 tests）
 
-- [ ] **Step 5: 全量回归 + Commit**
+- [x] **Step 5: 全量回归 + Commit**
 
 Run: `~/tools/apache-maven-4.0.0-rc-6/bin/mvn -B -ntp -pl easypdf-xhtml -am clean verify`
 Expected: BUILD SUCCESS，测试计数 = 原 19 + 新 9 = 28
@@ -486,12 +486,12 @@ git commit -m "feat(markdown): add EasyPdf facade for markdown-to-pdf and pdf-to
 - Consumes: Task 1-4 的全部产物
 - Produces: 三分支均含 Markdown ↔ PDF 能力且全量 verify 通过
 
-- [ ] **Step 1: 3.0.x 全量验证**
+- [x] **Step 1: 3.0.x 全量验证**
 
 Run: `~/tools/apache-maven-4.0.0-rc-6/bin/mvn -B -ntp clean verify`
 Expected: BUILD SUCCESS，总测试数 ≥ 103 + 9 = 112
 
-- [ ] **Step 2: 同步到 1.0.x**
+- [x] **Step 2: 同步到 1.0.x**
 
 ```bash
 git checkout feature/1.0.x
@@ -499,28 +499,28 @@ git checkout feature/1.0.x
 #       5 个 java 文件（MarkdownConverter/HtmlPdfConverter/EasyPdf + 3 个测试）
 ```
 
-- [ ] **Step 3: 验证 1.0.x**
+- [x] **Step 3: 验证 1.0.x**
 
 Run: `/opt/homebrew/bin/mvn -B -ntp clean verify`
 Expected: BUILD SUCCESS，总测试数 ≥ 112
 
-- [ ] **Step 4: Commit 1.0.x**
+- [x] **Step 4: Commit 1.0.x**
 
 ```bash
 git add -A
 git commit -m "feat(markdown): add markdown-to-pdf and pdf-to-markdown (sync from 3.0.x)"
 ```
 
-- [ ] **Step 5: 同步到 2.0.x**（同 Step 2）
+- [x] **Step 5: 同步到 2.0.x**（同 Step 2）
 
-- [ ] **Step 6: 验证 2.0.x**
+- [x] **Step 6: 验证 2.0.x**
 
 Run: `/opt/homebrew/bin/mvn -B -ntp clean verify`
 Expected: BUILD SUCCESS，总测试数 ≥ 112
 
-- [ ] **Step 7: Commit 2.0.x**（同 Step 4 信息）
+- [x] **Step 7: Commit 2.0.x**（同 Step 4 信息）
 
-- [ ] **Step 8: 回 3.0.x 推送三分支**
+- [x] **Step 8: 回 3.0.x 推送三分支**
 
 ```bash
 git checkout feature/3.0.x

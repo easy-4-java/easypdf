@@ -1,6 +1,6 @@
 # easypdf Word 侧清理与三分支终验计划（Phase 4）
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** 完成 easypdf 的"纯 PDF"收敛：删除全部 docx4j Word 侧代码（core 的 Word 工具包、xhtml 的 HTML→docx 转换器、9 个旧 `WordprocessingML{Engine}Template`），xhtml 模块收敛为"HTML/Markdown → PDF"转换模块；三分支全量验证通过并做发布演练，确保三分支可正常发布。
 
@@ -30,12 +30,12 @@
 - Consumes: Phase 3（引擎已迁移，旧 Word 类无生产引用）
 - Produces: core 仅含 `PdfTemplate` + `core/convert` + `core/template`；依赖仅保留 iText html2pdf/kernel/layout/io 等
 
-- [ ] **Step 1: 验证零引用**
+- [x] **Step 1: 验证零引用**
 
 Run: `grep -rln "WordprocessingMLTemplate\|Docx4jConstants\|io.github.easy4j.pdf.io\|io.github.easy4j.pdf.wml\|io.github.easy4j.pdf.utils\|io.github.easy4j.pdf.fonts\|io.github.easy4j.pdf.handler\|io.github.easy4j.pdf.bus" --include="*.java" easypdf-*/src/main | grep -v "easypdf-core/src/main"`
 Expected: 空输出（跨模块零引用；easydoc 无关）
 
-- [ ] **Step 2: 删除 core Word 侧**
+- [x] **Step 2: 删除 core Word 侧**
 
 ```bash
 git rm -r easypdf-core/src/main/java/io/github/easy4j/pdf/io \
@@ -49,7 +49,7 @@ git rm easypdf-core/src/main/java/io/github/easy4j/pdf/WordprocessingMLTemplate.
        easypdf-core/src/main/java/io/github/easy4j/pdf/Docx4jConstants.java
 ```
 
-- [ ] **Step 3: 删除对应测试（保留 convert/template 测试）**
+- [x] **Step 3: 删除对应测试（保留 convert/template 测试）**
 
 ```bash
 for f in $(find easypdf-core/src/test/java -name "*.java"); do
@@ -60,16 +60,16 @@ for f in $(find easypdf-core/src/test/java -name "*.java"); do
 done
 ```
 
-- [ ] **Step 4: 编辑 core pom**
+- [x] **Step 4: 编辑 core pom**
 
 删除 docx4j 三个依赖、javax.servlet-api、commons-lang3/commons-io、testExcludes 配置块。
 
-- [ ] **Step 5: 验证**
+- [x] **Step 5: 验证**
 
 Run: `~/tools/apache-maven-4.0.0-rc-6/bin/mvn -B -ntp -pl easypdf-core -am clean verify`
 Expected: BUILD SUCCESS
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add -A
@@ -91,12 +91,12 @@ git commit -m "refactor(core): remove docx4j Word-side code and dependencies, ke
 - Consumes: Phase 3（9 引擎已不依赖 easypdf-xhtml）
 - Produces: xhtml 仅含 `convert/**`（EasyPdf/MarkdownConverter）与 HTML→PDF 相关依赖
 
-- [ ] **Step 1: 验证零引用**
+- [x] **Step 1: 验证零引用**
 
 Run: `grep -rln "WordprocessingMLHtmlTemplate\|XHTMLImporterUtils\|io.github.easy4j.pdf.xhtml" --include="*.java" easypdf-*/src/main | grep -v "easypdf-xhtml/src/main"`
 Expected: 空输出（引擎已迁移，无跨模块引用）
 
-- [ ] **Step 2: 删除 xhtml Word 侧**
+- [x] **Step 2: 删除 xhtml Word 侧**
 
 ```bash
 git rm -r easypdf-xhtml/src/main/java/io/github/easy4j/pdf/xhtml/handler \
@@ -106,7 +106,7 @@ git rm easypdf-xhtml/src/main/java/io/github/easy4j/pdf/xhtml/WordprocessingMLHt
        easypdf-xhtml/src/main/java/io/github/easy4j/pdf/xhtml/DataMap.java
 ```
 
-- [ ] **Step 3: 删除对应测试与 demo**
+- [x] **Step 3: 删除对应测试与 demo**
 
 ```bash
 git rm easypdf-xhtml/src/test/java/io/github/easy4j/pdf/xhtml/WordprocessingMLHtmlTemplateTest.java \
@@ -123,14 +123,14 @@ git rm -r easypdf-xhtml/src/test/java/io/github/easy4j/pdf/xhtml/handler \
           easypdf-xhtml/src/test/java/io/github/easy4j/pdf/xhtml/utils
 ```
 
-- [ ] **Step 4: 编辑 xhtml pom**（移除 docx4j-ImportXHTML/xhtmlrenderer/cssparser/flying-saucer-pdf 依赖与 testExcludes）
+- [x] **Step 4: 编辑 xhtml pom**（移除 docx4j-ImportXHTML/xhtmlrenderer/cssparser/flying-saucer-pdf 依赖与 testExcludes）
 
-- [ ] **Step 5: 验证**
+- [x] **Step 5: 验证**
 
 Run: `~/tools/apache-maven-4.0.0-rc-6/bin/mvn -B -ntp -pl easypdf-xhtml -am clean verify`
 Expected: BUILD SUCCESS
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add -A
@@ -150,7 +150,7 @@ git commit -m "refactor(xhtml): remove docx4j conversion classes, keep HTML/Mark
 - Consumes: Phase 3（新 `{Engine}PdfTemplate` 已就位且测试通过）
 - Produces: 每个引擎模块仅含 `{Engine}PdfTemplate` 与其测试
 
-- [ ] **Step 1: 删除旧类与旧测试**
+- [x] **Step 1: 删除旧类与旧测试**
 
 ```bash
 for m in freemarker velocity thymeleaf beetl rythm jetbrick httl webit jsp; do
@@ -161,12 +161,12 @@ for m in freemarker velocity thymeleaf beetl rythm jetbrick httl webit jsp; do
 done
 ```
 
-- [ ] **Step 2: 全量验证**
+- [x] **Step 2: 全量验证**
 
 Run: `~/tools/apache-maven-4.0.0-rc-6/bin/mvn -B -ntp clean verify`
 Expected: BUILD SUCCESS；记录测试基线（xhtml 的 19 个 docx4j 测试已删，engine 新测试 + core 测试为净增量）
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add -A
@@ -184,7 +184,7 @@ git commit -m "refactor(engines): remove legacy WordprocessingML engine adapters
 - Consumes: Task 1-3 产物
 - Produces: 三分支纯 PDF 形态、全量 verify 通过、发布配置可执行
 
-- [ ] **Step 1: 3.0.x 最终验证 + 发布演练**
+- [x] **Step 1: 3.0.x 最终验证 + 发布演练**
 
 Run: `~/tools/apache-maven-4.0.0-rc-6/bin/mvn -B -ntp clean verify`
 Expected: BUILD SUCCESS
@@ -192,32 +192,32 @@ Expected: BUILD SUCCESS
 Run: `~/tools/apache-maven-4.0.0-rc-6/bin/mvn -B -ntp -DskipTests -P central install`（本地验证 central profile 装配，不触网发布）
 Expected: BUILD SUCCESS（校验 central-publishing-plugin 配置与 GPG/源码/javadoc 插件装配无误）
 
-- [ ] **Step 2: 同步到 1.0.x**（对比整合：Word 侧删除 + 依赖清理 + testExcludes 移除）
+- [x] **Step 2: 同步到 1.0.x**（对比整合：Word 侧删除 + 依赖清理 + testExcludes 移除）
 
 ```bash
 git checkout feature/1.0.x
 # 移植 Task 1-3 变更
 ```
 
-- [ ] **Step 3: 验证 1.0.x**（含 `-P central` 本地装配，1.0.x 用 Maven 3.9.16）
+- [x] **Step 3: 验证 1.0.x**（含 `-P central` 本地装配，1.0.x 用 Maven 3.9.16）
 
 Run: `/opt/homebrew/bin/mvn -B -ntp clean verify` + `/opt/homebrew/bin/mvn -B -ntp -DskipTests -P central install`
 Expected: BUILD SUCCESS
 
-- [ ] **Step 4: Commit 1.0.x**
+- [x] **Step 4: Commit 1.0.x**
 
 ```bash
 git add -A
 git commit -m "refactor(cleanup): sync Word-side removal and final PDF-only state from 3.0.x"
 ```
 
-- [ ] **Step 5: 同步到 2.0.x**（同 Step 2）
+- [x] **Step 5: 同步到 2.0.x**（同 Step 2）
 
-- [ ] **Step 6: 验证 2.0.x**（同 Step 3）
+- [x] **Step 6: 验证 2.0.x**（同 Step 3）
 
-- [ ] **Step 7: Commit 2.0.x**（同 Step 4 信息）
+- [x] **Step 7: Commit 2.0.x**（同 Step 4 信息）
 
-- [ ] **Step 8: 回 3.0.x 推送三分支 + 勾选本计划**
+- [x] **Step 8: 回 3.0.x 推送三分支 + 勾选本计划**
 
 ```bash
 git checkout feature/3.0.x

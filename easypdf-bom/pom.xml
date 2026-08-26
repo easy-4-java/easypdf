@@ -15,11 +15,6 @@
 		<dependencies>
 			<dependency>
 				<groupId>${project.groupId}</groupId>
-				<artifactId>easypdf-core</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>${project.groupId}</groupId>
 				<artifactId>easypdf-beetl</artifactId>
 				<version>${project.version}</version>
 			</dependency>
@@ -61,11 +56,6 @@
 			<dependency>
 				<groupId>${project.groupId}</groupId>
 				<artifactId>easypdf-webit</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>${project.groupId}</groupId>
-				<artifactId>easypdf-core</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 		</dependencies>

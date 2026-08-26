@@ -138,6 +138,7 @@
         <module>easypdf-rythm</module>
         <module>easypdf-thymeleaf</module>
         <module>easypdf-velocity</module>
+        <module>easypdf-webmvc</module>
         <module>easypdf-webit</module>
         <module>easypdf-xhtml</module>
     </modules>
@@ -606,6 +607,32 @@
                 <groupId>javax.servlet</groupId>
                 <artifactId>javax.servlet-api</artifactId>
                 <version>${servlet-api.version}</version>
+            </dependency>
+            <!-- For Spring (2.0.x webmvc) -->
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-webmvc</artifactId>
+                <version>5.3.39</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-test</artifactId>
+                <version>5.3.39</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-context</artifactId>
+                <version>5.3.39</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-beans</artifactId>
+                <version>5.3.39</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-core</artifactId>
+                <version>5.3.39</version>
             </dependency>
             <!-- For Docx4j -->
             <dependency>

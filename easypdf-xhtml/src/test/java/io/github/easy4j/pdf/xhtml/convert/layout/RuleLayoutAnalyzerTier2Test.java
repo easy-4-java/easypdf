@@ -75,4 +75,46 @@ class RuleLayoutAnalyzerTier2Test {
         assertThat(md).contains("第一页正文内容").contains("第二页正文内容");
         assertThat(md).doesNotContain("页眉样板");
     }
+
+    @Test
+    void coverArtTextNotMultiLevelHeadings() throws Exception {
+        String cover = "这是封面宣传语这是一段很长的封面艺术文字超过八十个字符用于模拟封面大段文字场景内容继续补充到达阈值以上再加一点";
+        List<PageModel> pages = renderPages(
+            "<html><body><div style='font-size:42px'>" + cover + "</div>"
+            + "<h2>正文小节</h2><p>正文内容。</p></body></html>");
+        DocumentStructure ds = new RuleLayoutAnalyzer().analyze(pages, Collections.<int[]>emptyList(), "t");
+        String md = ds.fullMarkdown();
+        assertThat(md).contains("## 正文小节").contains("正文内容。").contains("这是封面宣传语");
+        // 封面大段文字不产生任何标题行
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("(?m)^#{1,6} ").matcher(md);
+        int headings = 0;
+        while (m.find()) {
+            int st = m.start();
+            int en = md.indexOf('\n', st);
+            String line = md.substring(st, en < 0 ? md.length() : en).trim();
+            if (line.equals("# t")) continue; // 文档标题行（其重复输出由 Task 1 分支修复）
+            headings++;
+        }
+        assertThat(headings).isEqualTo(1); // 仅 "## 正文小节"
+    }
+
+    @Test
+    void headingLevelCappedAtThreeTiers() throws Exception {
+        List<PageModel> pages = renderPages(
+            "<html><body>"
+            + "<div style='font-size:40px'>A40</div>"
+            + "<div style='font-size:32px'>A32</div>"
+            + "<div style='font-size:26px'>A26</div>"
+            + "<div style='font-size:21px'>A21</div>"
+            + "<div style='font-size:18px'>A18</div>"
+            + "<p>正文。</p></body></html>");
+        DocumentStructure ds = new RuleLayoutAnalyzer().analyze(pages, Collections.<int[]>emptyList(), "t");
+        String md = ds.fullMarkdown();
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("(?m)^#{1,6} A").matcher(md);
+        int headings = 0;
+        while (m.find()) headings++;
+        assertThat(headings).isLessThanOrEqualTo(3); // 最多 3 档标题
+        assertThat(md).doesNotContain("# A21").doesNotContain("# A18"); // 降为正文
+        assertThat(md).contains("A21").contains("A18"); // 内容仍在
+    }
 }

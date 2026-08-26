@@ -1,6 +1,6 @@
 # easypdf 提取引擎加固计划（Round 2：流式表格增强 / fullMarkdown 去重 / 嵌套表格 / 标题防误判）
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** 修复 Round 1 提取引擎的 4 个已验证短板：① `fullMarkdown` 文档标题与首个 section 标题重复输出；② 流式表格（无边框表格）为保守基础版且无单测；③ Tagged 路径嵌套表格直接丢失结构；④ 封面大字被误判为多级标题。全部完成后三分支同步推送。
 
@@ -35,7 +35,7 @@
 **Interfaces:**
 - Produces: `fullMarkdown()` 语义——当 `title` 非空且 `sections[0]` 为 level-1 且标题与 `title` 相等（trim 后）时，**跳过前置的 `# title`**（以 section 渲染为准）；其余情况维持前置
 
-- [ ] **Step 1: 写失败测试**（在 `DocumentStructureTest` 追加/强化）
+- [x] **Step 1: 写失败测试**（在 `DocumentStructureTest` 追加/强化）
 ```java
 @Test
 void fullMarkdownDeduplicatesDocTitleAndFirstHeading() {
@@ -59,8 +59,8 @@ void fullMarkdownKeepsTitleWhenFirstSectionDiffers() {
     assertThat(doc.fullMarkdown()).contains("# 文档元标题").contains("# 章标题");
 }
 ```
-- [ ] **Step 2: 确认失败**（第一个用例应失败：当前输出两次）
-- [ ] **Step 3: 实现**——`fullMarkdown()` 中：
+- [x] **Step 2: 确认失败**（第一个用例应失败：当前输出两次）
+- [x] **Step 3: 实现**——`fullMarkdown()` 中：
 ```java
 boolean dedup = title != null && !title.isEmpty()
         && sections != null && !sections.isEmpty()
@@ -70,8 +70,8 @@ if (!dedup && title != null && !title.isEmpty()) {
     sb.append("# ").append(title).append('\n').append('\n');
 }
 ```
-- [ ] **Step 4: 模块回归全绿**（重点盯 `RuleLayoutAnalyzerTier2Test`、`TaggedRoundTripTest`）
-- [ ] **Step 5: Commit** `fix(extract): deduplicate doc title and first heading in fullMarkdown`
+- [x] **Step 4: 模块回归全绿**（重点盯 `RuleLayoutAnalyzerTier2Test`、`TaggedRoundTripTest`）
+- [x] **Step 5: Commit** `fix(extract): deduplicate doc title and first heading in fullMarkdown`
 
 ---
 
@@ -87,7 +87,7 @@ if (!dedup && title != null && !title.isEmpty()) {
 3. **表头判定**：首行 bold 比例 ≥50% 或与后续行字号差 >0 → 首行为 headers（已是首行作 headers，补 bold 证据断言即可）
 4. **列内文本合并**：cell 内多 chunk 按 x 拼接（沿用）
 
-- [ ] **Step 1: 写失败测试**（3 个）：
+- [x] **Step 1: 写失败测试**（3 个）：
 ```java
 // 1) 无边框对齐表格 → pipe table（headers + rows 精确断言）
 html: <table style='border:none'><tr><td>列甲</td><td>列乙</td></tr><tr><td>值一</td><td>值二</td></tr><tr><td>值三</td><td>值四</td></tr></table>
@@ -99,9 +99,9 @@ html: <p>第一段落</p><p>第二段落</p><p>第三段落</p> → ds.tables �
 // 3) 行间列数不一致（2列,2列,1列 混排）→ 不触发
 用两个 float div 宽度不同的行制造错列 → ds.tables 为空
 ```
-- [ ] **Step 2: 确认失败** → **Step 3: 实现规则 1-2**（列簇 = 行内 chunk 按间隙 `> max(size*4, 30pt)` 切分；跨行对齐校验 ±6pt）
-- [ ] **Step 4: 模块回归全绿**
-- [ ] **Step 5: Commit** `feat(extract): harden stream tables with column-count and alignment checks`
+- [x] **Step 2: 确认失败** → **Step 3: 实现规则 1-2**（列簇 = 行内 chunk 按间隙 `> max(size*4, 30pt)` 切分；跨行对齐校验 ±6pt）
+- [x] **Step 4: 模块回归全绿**
+- [x] **Step 5: Commit** `feat(extract): harden stream tables with column-count and alignment checks`
 
 ---
 
@@ -113,7 +113,7 @@ html: <p>第一段落</p><p>第二段落</p><p>第三段落</p> → ds.tables �
 
 **规则**：`readCells` 遇到 TD 内的嵌套 `Table`：不再丢弃/拍平到兄弟行，而是把内层表格渲染为 **GFM 子表文本**并入该 cell（cell 内换行用 `<br>` 连接，保证外层 pipe 表不被破坏）。
 
-- [ ] **Step 1: 写失败测试**：
+- [x] **Step 1: 写失败测试**：
 ```java
 @Test
 void nestedTableLandsInParentCell() throws Exception {
@@ -131,10 +131,10 @@ void nestedTableLandsInParentCell() throws Exception {
     assertThat(doc.tables.get(0).rows.get(0).get(1)).contains("子项").contains("1");
 }
 ```
-- [ ] **Step 2: 确认失败**（当前嵌套表拍平成额外行或丢失）
-- [ ] **Step 3: 实现**——`readCells` 递归时检测 `Table` 子元素 → 调 `readTable` 得子 `DocumentTable` → 用现有 `toMarkdown()` 逻辑输出子表字符串，`<br>` 连接进 cell
-- [ ] **Step 4: 回归**（含原 `roundTripPreservesHeadingsTableAndList`）
-- [ ] **Step 5: Commit** `feat(tagged): merge nested tables into parent cells with br-joined subtable markdown`
+- [x] **Step 2: 确认失败**（当前嵌套表拍平成额外行或丢失）
+- [x] **Step 3: 实现**——`readCells` 递归时检测 `Table` 子元素 → 调 `readTable` 得子 `DocumentTable` → 用现有 `toMarkdown()` 逻辑输出子表字符串，`<br>` 连接进 cell
+- [x] **Step 4: 回归**（含原 `roundTripPreservesHeadingsTableAndList`）
+- [x] **Step 5: Commit** `feat(tagged): merge nested tables into parent cells with br-joined subtable markdown`
 
 ---
 
@@ -149,7 +149,7 @@ void nestedTableLandsInParentCell() throws Exception {
 2. 行长 >80 字符的"大字行"不判标题（封面段落/艺术字常超长）
 3. bold 且字号 ∈ [body, body*1.22) 的孤立短行（<40 字符）升为 level 3 标题（次要小节）
 
-- [ ] **Step 1: 写失败测试**：
+- [x] **Step 1: 写失败测试**：
 ```java
 @Test
 void coverArtTextNotMultiLevelHeadings() throws Exception {
@@ -168,18 +168,18 @@ void headingLevelCappedAtThreeTiers() throws Exception {
     → 产生的 heading 行数 ≤ 3（A21/A18 降为正文）
 }
 ```
-- [ ] **Step 2: 确认失败** → **Step 3: 实现规则 1-2**（规则 3 视断言需要实现或降级为可选）
-- [ ] **Step 4: 回归全绿**
-- [ ] **Step 5: Commit** `fix(extract): guard heading detection against cover art with 3-tier cap and length limit`
+- [x] **Step 2: 确认失败** → **Step 3: 实现规则 1-2**（规则 3 视断言需要实现或降级为可选）
+- [x] **Step 4: 回归全绿**
+- [x] **Step 5: Commit** `fix(extract): guard heading detection against cover art with 3-tier cap and length limit`
 
 ---
 
 ### Task 5: 三分支同步 + 推送 + 勾选
 
-- [ ] **Step 1: 3.0.x 全量 `clean verify`**（预期 84 + 新增 ≈ 7-9 = 91+ tests）
-- [ ] **Step 2: 同步 1.0.x**（`git checkout feature/3.0.x -- easypdf-xhtml/src/main/java/io/github/easy4j/pdf/xhtml/convert/ easypdf-xhtml/src/test/java/io/github/easy4j/pdf/xhtml/convert/`）→ **Step 3: 全量 verify** → **Step 4: Commit**
-- [ ] **Step 5: 同步 2.0.x** → **Step 6: verify** → **Step 7: Commit**
-- [ ] **Step 8: 推送三分支 + `sed 's/- \[ \]/- [x]/g'` 勾选本计划 + commit + push**
+- [x] **Step 1: 3.0.x 全量 `clean verify`**（预期 84 + 新增 ≈ 7-9 = 91+ tests）
+- [x] **Step 2: 同步 1.0.x**（`git checkout feature/3.0.x -- easypdf-xhtml/src/main/java/io/github/easy4j/pdf/xhtml/convert/ easypdf-xhtml/src/test/java/io/github/easy4j/pdf/xhtml/convert/`）→ **Step 3: 全量 verify** → **Step 4: Commit**
+- [x] **Step 5: 同步 2.0.x** → **Step 6: verify** → **Step 7: Commit**
+- [x] **Step 8: 推送三分支 + `sed 's/- \[ \]/- [x]/g'` 勾选本计划 + commit + push**
 
 ---
 

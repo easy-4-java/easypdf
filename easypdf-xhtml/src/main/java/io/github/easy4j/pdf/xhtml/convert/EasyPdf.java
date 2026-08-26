@@ -50,4 +50,28 @@ public final class EasyPdf {
             tmp.delete();
         }
     }
+
+    /** PDF 文件 → 结构化 Markdown（标题/列表/表格，document 顶层；Task 2-3 新增）。 */
+    public static String pdfToStructuredMarkdown(File pdf) throws IOException {
+        Objects.requireNonNull(pdf, "pdf must not be null");
+        return PdfToMarkdownConverter.pdfToFullMarkdown(pdf);
+    }
+
+    /** PDF 文件 → 结构化 Document（智能体按需取章节/表格，Task 2-3 新增）。 */
+    public static DocumentStructure pdfToStructured(File pdf) throws IOException {
+        Objects.requireNonNull(pdf, "pdf must not be null");
+        return PdfToMarkdownConverter.pdfToStructured(pdf);
+    }
+
+    /** PDF 输入流 → 结构化 Markdown。 */
+    public static String pdfToStructuredMarkdown(InputStream in) throws IOException {
+        Objects.requireNonNull(in, "in must not be null");
+        File tmp = File.createTempFile("easypdf-", ".pdf");
+        try {
+            Files.copy(in, tmp.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            return pdfToStructuredMarkdown(tmp);
+        } finally {
+            tmp.delete();
+        }
+    }
 }

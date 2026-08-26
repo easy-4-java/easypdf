@@ -45,23 +45,28 @@
 			<groupId>org.docx4j</groupId>
 			<artifactId>docx4j-export-fo</artifactId>
 		</dependency>
+			<dependency>
+			<groupId>com.itextpdf</groupId>
+			<artifactId>html2pdf</artifactId>
+		</dependency>
 	</dependencies>
 
 	<build>
 		<plugins>
-			<!--
-			  Legacy iText5/XML engine under io.github.easy4j.pdf.core depends on
-			  unavailable com.jeefw.fastkit/fastxml; keep sources in repo but skip compile.
-			-->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<configuration>
-					<excludes>
-						<exclude>**/pdf/core/**</exclude>
-					</excludes>
+					<!-- 历史遗留的 docx4j 旧 JAXB 示例（javax.xml.bind 已随 JDK 移除，无法编译） -->
 					<testExcludes>
-						<exclude>**/*</exclude>
+						<exclude>**/AddingTableOfContent.java</exclude>
+						<exclude>**/Docx4j_Helper.java</exclude>
+						<exclude>**/Docx4j_删除所有批注_S3_Test.java</exclude>
+						<exclude>**/Docx4j_合并单元格_S4_Test.java</exclude>
+						<exclude>**/Docx4j_工具类_S3_Test.java</exclude>
+						<exclude>**/Docx4j_替换模板.java</exclude>
+						<exclude>**/Docx4j_读取内容控件_S3_Test.java</exclude>
+						<exclude>**/Docx4j_读取内容控件_S4_Test.java</exclude>
 					</testExcludes>
 				</configuration>
 			</plugin>

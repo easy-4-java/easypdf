@@ -74,4 +74,19 @@ public final class EasyPdf {
             tmp.delete();
         }
     }
+
+    /** Markdown → Tagged PDF 文件（无损往返用：pdfToStructuredMarkdown 可语义级还原）。 */
+    public static void markdownToPdfTagged(String markdown, File output) throws IOException {
+        Objects.requireNonNull(output, "output must not be null");
+        try (OutputStream out = Files.newOutputStream(output.toPath())) {
+            markdownToPdfTagged(markdown, out);
+        }
+    }
+
+    /** Markdown → Tagged PDF 输出流。 */
+    public static void markdownToPdfTagged(String markdown, OutputStream out) throws IOException {
+        Objects.requireNonNull(markdown, "markdown must not be null");
+        Objects.requireNonNull(out, "out must not be null");
+        HtmlPdfConverter.htmlToPdfTagged(MarkdownConverter.mdToHtml(markdown), out);
+    }
 }

@@ -211,7 +211,15 @@
 		</dependency>
 		<dependency>
 			<groupId>com.vladsch.flexmark</groupId>
-			<artifactId>flexmark-html</artifactId>
+			<artifactId>flexmark-ext-tables</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.vladsch.flexmark</groupId>
+			<artifactId>flexmark-ext-gfm-strikethrough</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.vladsch.flexmark</groupId>
+			<artifactId>flexmark-ext-gfm-tasklist</artifactId>
 		</dependency>
 
 	</dependencies>

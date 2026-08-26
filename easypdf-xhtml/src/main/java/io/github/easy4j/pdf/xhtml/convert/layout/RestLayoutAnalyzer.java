@@ -32,10 +32,11 @@ import io.github.easy4j.pdf.xhtml.convert.DocumentTable;
 public final class RestLayoutAnalyzer implements LayoutAnalyzer {
 
     private static final Pattern SECTION = Pattern.compile(
-            "\\{\"title\":\"(.*?)\",\"level\":(\\d+),\"content\":\"(.*?)\"\\}");
+            "\\{\"title\":\"((?:[^\"\\\\]|\\\\.)*?)\",\"level\":(\\d+),\"content\":\"((?:[^\"\\\\]|\\\\.)*?)\"\\}");
     private static final Pattern TABLE = Pattern.compile(
-            "\\{\"headers\":\\[(.*?)],\"rows\":\\[(.*?)]}");
-    private static final Pattern ARRAY = Pattern.compile("\\[(?:\"(?:[^\"\\\\]|\\\\.)*\"|\\d+)*(?:,(?:\"(?:[^\"\\\\]|\\\\.)*\"|\\d+))*\\]");
+            "\\{\"headers\":\\[([^\\{]*?)\\],\"rows\":\\[([^\\{]*?)\\]}");
+    private static final Pattern ARRAY = Pattern.compile(
+            "\\[(?:\"(?:[^\"\\\\]|\\\\.)*\"|\\d+)*(?:,(?:\"(?:[^\"\\\\]|\\\\.)*\"|\\d+))*\\]");
 
     private final PdfExtractionProperties props;
 

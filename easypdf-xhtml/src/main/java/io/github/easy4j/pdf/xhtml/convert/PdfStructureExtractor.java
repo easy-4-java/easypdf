@@ -227,9 +227,71 @@ public final class PdfStructureExtractor {
             PdfStructElem e = (PdfStructElem) child;
             String r = normRole(e);
             if (StandardRoles.TD.equals(r) || StandardRoles.TH.equals(r)) {
-                cells.add(textOf(e, ctx).trim());
+                cells.add(cellMarkdown(e, ctx));
             }
         }
+    }
+
+    /**
+     * 单元格内容：非 Table 子元素的 mcid 文本 + 每个嵌套 Table 渲染为 GFM 子表，
+     * 以 {@code <br>} 连接（保证外层 pipe 表结构不被换行破坏）。
+     */
+    private static String cellMarkdown(PdfStructElem td, Ctx ctx) {
+        StringBuilder main = new StringBuilder();
+        List<DocumentTable> subs = new ArrayList<DocumentTable>();
+        if (td.getKids() != null) {
+            for (IStructureNode k : td.getKids()) {
+                if (!(k instanceof PdfStructElem)) continue;
+                PdfStructElem ke = (PdfStructElem) k;
+                if (StandardRoles.TABLE.equals(normRole(ke))) {
+                    DocumentTable sub = readTable(ke, ctx);
+                    if (sub != null && (sub.headers.size() + sub.rows.size()) > 0) {
+                        subs.add(sub);
+                    }
+                } else {
+                    collectText(ke, ctx, main);
+                }
+            }
+        }
+        StringBuilder cell = new StringBuilder(main.toString().trim());
+        for (DocumentTable sub : subs) {
+            if (cell.length() > 0) {
+                cell.append("<br>");
+            }
+            cell.append(tableMarkdown(sub));
+        }
+        return cell.toString();
+    }
+
+    /** DocumentTable → GFM pipe 表文本（与 DocumentStructure.appendTable 同格式）。 */
+    private static String tableMarkdown(DocumentTable t) {
+        StringBuilder sb = new StringBuilder();
+        if (t.headers.isEmpty()) {
+            for (List<String> row : t.rows) {
+                sb.append('|').append(joinCells(row)).append("|\n");
+            }
+            return sb.toString().trim();
+        }
+        for (List<String> hdr : t.headers) {
+            sb.append('|').append(joinCells(hdr)).append("|\n");
+        }
+        sb.append('|');
+        for (int i = 0; i < t.headers.get(0).size(); i++) {
+            sb.append(" --- |");
+        }
+        sb.append('\n');
+        for (List<String> row : t.rows) {
+            sb.append('|').append(joinCells(row)).append("|\n");
+        }
+        return sb.toString().trim();
+    }
+
+    private static String joinCells(List<String> cs) {
+        StringBuilder sb = new StringBuilder();
+        for (String c : cs) {
+            sb.append(' ').append(c == null ? "" : c.trim()).append(" |");
+        }
+        return sb.toString();
     }
 
     private static void readList(PdfStructElem list, StringBuilder out, Ctx ctx) {

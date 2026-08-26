@@ -75,6 +75,7 @@
         <javax.mail-api.version>1.6.2</javax.mail-api.version>
         <jetbrick.version>2.1.10</jetbrick.version>
         <jsoup.version>1.18.3</jsoup.version>
+        <flexmark.version>0.64.8</flexmark.version>
         <junit-jupiter.version>6.1.0</junit-jupiter.version>
         <junit.version>4.13.2</junit.version>
         <assertj.version>3.27.7</assertj.version>
@@ -697,6 +698,27 @@
                 <groupId>org.jsoup</groupId>
                 <artifactId>jsoup</artifactId>
                 <version>${jsoup.version}</version>
+            </dependency>
+            <!-- https://mvnrepository.com/artifact/com.vladsch.flexmark/flexmark -->
+            <dependency>
+                <groupId>com.vladsch.flexmark</groupId>
+                <artifactId>flexmark</artifactId>
+                <version>${flexmark.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.vladsch.flexmark</groupId>
+                <artifactId>flexmark-ext-tables</artifactId>
+                <version>${flexmark.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.vladsch.flexmark</groupId>
+                <artifactId>flexmark-ext-gfm-strikethrough</artifactId>
+                <version>${flexmark.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.vladsch.flexmark</groupId>
+                <artifactId>flexmark-ext-gfm-tasklist</artifactId>
+                <version>${flexmark.version}</version>
             </dependency>
             <!-- For iText -->
             <dependency>

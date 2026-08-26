@@ -65,7 +65,7 @@
 			</dependency>
 			<dependency>
 				<groupId>${project.groupId}</groupId>
-				<artifactId>easypdf-xhtml</artifactId>
+				<artifactId>easypdf-core</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 		</dependencies>

@@ -22,33 +22,25 @@ import java.util.Map;
 
 import org.docx4j.Docx4jProperties;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
-import io.github.easy4j.pdf.WordprocessingMLTemplate;
-import io.github.easy4j.pdf.xhtml.WordprocessingMLHtmlTemplate;
 
 import webit.script.CFG;
 import webit.script.Engine;
+import io.github.easy4j.pdf.template.AbstractStringTemplateWrappingPdfTemplate;
 
 /**
  * Implementation of wordprocessing m l webit template extending WordprocessingMLTemplate.
  *
  * @author <a href="https://github.com/loong10k">Loong Wan</a>
  */
-public class WordprocessingMLWebitTemplate extends WordprocessingMLTemplate {
+public class WebitPdfTemplate extends AbstractStringTemplateWrappingPdfTemplate {
 	
 	protected Engine engine;
-	protected WordprocessingMLHtmlTemplate mlHtmlTemplate;
 	
-	public WordprocessingMLWebitTemplate() {
-		this(false, false);
-	}
 	
-	public WordprocessingMLWebitTemplate(boolean landscape, boolean altChunk) {
-		this.mlHtmlTemplate = new WordprocessingMLHtmlTemplate(landscape, altChunk) ;
-	}
 	
-	public WordprocessingMLWebitTemplate(WordprocessingMLHtmlTemplate template) {
-		this.mlHtmlTemplate = template;
-	}
+	
+	
+	
 
 	/**
 	 * 使用Webit模板引擎渲染模板
@@ -57,18 +49,6 @@ public class WordprocessingMLWebitTemplate extends WordprocessingMLTemplate {
 	 * @return {@link WordprocessingMLPackage} 对象
 	 * @throws Exception ：异常对象
 	 */
-	@Override
-	public WordprocessingMLPackage process(String template, Map<String, Object> variables) throws Exception {
-		//创建模板输出内容接收对象
-		StringWriter output = new StringWriter();
-		//使用Webit模板引擎渲染模板
-		getEngine().getTemplate(template).merge(variables, output);
-		//获取模板渲染后的结果
-		String html = output.toString();
-		//使用HtmlTemplate进行渲染
-		return mlHtmlTemplate.process(html, variables);
-	}
-	
 	public Engine getEngine() throws IOException {
 		return engine == null ? getInternalEngine() : engine;
 	}
@@ -103,4 +83,17 @@ public class WordprocessingMLWebitTemplate extends WordprocessingMLTemplate {
         this.setEngine(engine);
         return engine;
 	}
+
+	@Override
+	protected String render(String template, Map<String, Object> variables) throws Exception {
+
+		//创建模板输出内容接收对象
+		StringWriter output = new StringWriter();
+		//使用Webit模板引擎渲染模板
+		getEngine().getTemplate(template).merge(variables, output);
+		//获取模板渲染后的结果
+		String html = output.toString();
+		return html;
+	}
+
 }

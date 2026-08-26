@@ -26,31 +26,23 @@ import org.apache.velocity.tools.generic.DateTool;
 import org.docx4j.Docx4jProperties;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import io.github.easy4j.pdf.Docx4jConstants;
-import io.github.easy4j.pdf.WordprocessingMLTemplate;
-import io.github.easy4j.pdf.xhtml.WordprocessingMLHtmlTemplate;
+import io.github.easy4j.pdf.template.AbstractStringTemplateWrappingPdfTemplate;
 
 /**
  * Implementation of wordprocessing m l velocity template extending WordprocessingMLTemplate.
  *
  * @author <a href="https://github.com/loong10k">Loong Wan</a>
  */
-public class WordprocessingMLVelocityTemplate extends WordprocessingMLTemplate {
+public class VelocityPdfTemplate extends AbstractStringTemplateWrappingPdfTemplate {
 	
 	protected VelocityEngine engine;
 	protected DateTool dateTool = new DateTool();
-	protected WordprocessingMLHtmlTemplate mlHtmlTemplate;
 	
-	public WordprocessingMLVelocityTemplate() {
-		this(false, false);
-	}
 	
-	public WordprocessingMLVelocityTemplate(boolean landscape, boolean altChunk) {
-		this.mlHtmlTemplate = new WordprocessingMLHtmlTemplate(landscape, altChunk) ;
-	}
 	
-	public WordprocessingMLVelocityTemplate(WordprocessingMLHtmlTemplate template) {
-		this.mlHtmlTemplate = template;
-	}
+	
+	
+	
 	
 	/**
 	 * 使用Velocity模板引擎渲染模板
@@ -59,21 +51,6 @@ public class WordprocessingMLVelocityTemplate extends WordprocessingMLTemplate {
 	 * @return {@link WordprocessingMLPackage} 对象
 	 * @throws Exception ：异常对象
 	 */
-	@Override
-	public WordprocessingMLPackage process(String template, Map<String, Object> variables) throws Exception {
-		//设置Velocity上下文对象
-		VelocityContext ctx = new VelocityContext(variables);
-		ctx.put("dateTool", dateTool);
-		// 创建模板输出内容接收对象
-		StringWriter output = new StringWriter();
-		// 使用Velocity模板引擎渲染模板
-		getEngine().getTemplate(template).merge(ctx, output);
-		//获取模板渲染后的结果
-		String html = output.toString();
-		//使用HtmlTemplate进行渲染
-		return mlHtmlTemplate.process(html, variables);
-	}
-	
 	public VelocityEngine getEngine() throws IOException {
 		return engine == null ? getInternalEngine() : engine;
 	}
@@ -108,6 +85,22 @@ public class WordprocessingMLVelocityTemplate extends WordprocessingMLTemplate {
         // 设置模板引擎，减少重复初始化消耗
         this.setEngine(engine);
         return engine;
+	}
+
+
+	@Override
+	protected String render(String template, Map<String, Object> variables) throws Exception {
+
+		//设置Velocity上下文对象
+		VelocityContext ctx = new VelocityContext(variables);
+		ctx.put("dateTool", dateTool);
+		// 创建模板输出内容接收对象
+		StringWriter output = new StringWriter();
+		// 使用Velocity模板引擎渲染模板
+		getEngine().getTemplate(template).merge(ctx, output);
+		//获取模板渲染后的结果
+		String html = output.toString();
+		return html;
 	}
 
 }

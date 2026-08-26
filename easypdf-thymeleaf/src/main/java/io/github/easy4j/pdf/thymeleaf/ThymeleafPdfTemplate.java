@@ -21,39 +21,31 @@ import java.util.Map;
 
 import org.docx4j.Docx4jProperties;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
-import io.github.easy4j.pdf.WordprocessingMLTemplate;
 import io.github.easy4j.pdf.utils.ArrayUtils;
 import io.github.easy4j.pdf.utils.StringUtils;
-import io.github.easy4j.pdf.xhtml.WordprocessingMLHtmlTemplate;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 import org.thymeleaf.templateresolver.AbstractConfigurableTemplateResolver;
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 import org.thymeleaf.templateresolver.FileTemplateResolver;
 import org.thymeleaf.templateresolver.UrlTemplateResolver;
+import io.github.easy4j.pdf.template.AbstractStringTemplateWrappingPdfTemplate;
 
 /**
  * Implementation of wordprocessing m l thymeleaf template extending WordprocessingMLTemplate.
  *
  * @author <a href="https://github.com/loong10k">Loong Wan</a>
  */
-public class WordprocessingMLThymeleafTemplate extends WordprocessingMLTemplate {
+public class ThymeleafPdfTemplate extends AbstractStringTemplateWrappingPdfTemplate {
 	
 	protected TemplateEngine engine;
 	protected AbstractConfigurableTemplateResolver templateResolver;
-	protected WordprocessingMLHtmlTemplate mlHtmlTemplate;
 
-	public WordprocessingMLThymeleafTemplate() {
-		this(false, false);
-	}
 	
-	public WordprocessingMLThymeleafTemplate(boolean landscape, boolean altChunk) {
-		this.mlHtmlTemplate = new WordprocessingMLHtmlTemplate(landscape, altChunk) ;
-	}
 	
-	public WordprocessingMLThymeleafTemplate(WordprocessingMLHtmlTemplate template) {
-		this.mlHtmlTemplate = template;
-	}
+	
+	
+	
 
 	/**
 	 * 使用Thymeleaf模板引擎渲染模板
@@ -62,21 +54,6 @@ public class WordprocessingMLThymeleafTemplate extends WordprocessingMLTemplate 
 	 * @return {@link WordprocessingMLPackage} 对象
 	 * @throws Exception ：异常对象
 	 */
-	@Override
-	public WordprocessingMLPackage process(String template, Map<String, Object> variables) throws Exception {
-		// 创建模板输出内容接收对象
-		StringWriter output = new StringWriter();
-		//设置上下文参数
-		Context ctx = new Context();
-        ctx.setVariables(variables);
-		// 使用Thymeleaf模板引擎渲染模板
-		getEngine().process(template , ctx , output);
-		//获取模板渲染后的结果
-		String html = output.toString();
-		//使用HtmlTemplate进行渲染
-		return mlHtmlTemplate.process(html, variables);
-	}
-	
 	public TemplateEngine getEngine() throws IOException {
 		return engine == null ? getInternalEngine() : engine;
 	}
@@ -139,4 +116,20 @@ public class WordprocessingMLThymeleafTemplate extends WordprocessingMLTemplate 
 		this.templateResolver = templateResolver;
 	}
 	
+
+	@Override
+	protected String render(String template, Map<String, Object> variables) throws Exception {
+
+		// 创建模板输出内容接收对象
+		StringWriter output = new StringWriter();
+		//设置上下文参数
+		Context ctx = new Context();
+        ctx.setVariables(variables);
+		// 使用Thymeleaf模板引擎渲染模板
+		getEngine().process(template , ctx , output);
+		//获取模板渲染后的结果
+		String html = output.toString();
+		return html;
+	}
+
 }

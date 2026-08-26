@@ -25,30 +25,16 @@ import org.beetl.core.resource.ClasspathResourceLoader;
 import org.docx4j.Docx4jProperties;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import io.github.easy4j.pdf.Docx4jConstants;
-import io.github.easy4j.pdf.WordprocessingMLTemplate;
-import io.github.easy4j.pdf.xhtml.WordprocessingMLHtmlTemplate;
+import io.github.easy4j.pdf.template.AbstractStringTemplateWrappingPdfTemplate;
 
 /**
  * Implementation of wordprocessing m l beetl template extending WordprocessingMLTemplate.
  *
  * @author <a href="https://github.com/loong10k">Loong Wan</a>
  */
-public class WordprocessingMLBeetlTemplate extends WordprocessingMLTemplate {
+public class BeetlPdfTemplate extends AbstractStringTemplateWrappingPdfTemplate {
 	
 	protected GroupTemplate engine;
-	protected WordprocessingMLHtmlTemplate mlHtmlTemplate;
-
-	public WordprocessingMLBeetlTemplate() {
-		this(false, false);
-	}
-	
-	public WordprocessingMLBeetlTemplate(boolean landscape, boolean altChunk) {
-		this.mlHtmlTemplate = new WordprocessingMLHtmlTemplate(landscape, altChunk) ;
-	}
-	
-	public WordprocessingMLBeetlTemplate(WordprocessingMLHtmlTemplate template) {
-		this.mlHtmlTemplate = template;
-	}
 
 	/**
 	 * 使用Beetl模板引擎渲染模板
@@ -57,17 +43,6 @@ public class WordprocessingMLBeetlTemplate extends WordprocessingMLTemplate {
 	 * @return {@link WordprocessingMLPackage} 对象
 	 * @throws Exception ：异常对象
 	 */
-	@Override
-	public WordprocessingMLPackage process(String template, Map<String, Object> variables) throws Exception {
-		//使用Beetl模板引擎渲染模板
-		Template beeTemplate = getEngine().getTemplate(template);
-		beeTemplate.binding(variables);
-		//获取模板渲染后的结果
-		String html = beeTemplate.render();
-		//使用HtmlTemplate进行渲染
-		return mlHtmlTemplate.process(html, variables);
-	}
-
 	public GroupTemplate getEngine() throws IOException {
 		return engine == null ? getInternalEngine() : engine;
 	}
@@ -126,6 +101,17 @@ public class WordprocessingMLBeetlTemplate extends WordprocessingMLTemplate {
         // 设置模板引擎，减少重复初始化消耗
         this.setEngine(engine);
         return engine;
+	}
+
+
+	@Override
+	protected String render(String template, Map<String, Object> variables) throws Exception {
+
+		//使用Beetl模板引擎渲染模板
+		Template beeTemplate = getEngine().getTemplate(template);
+		beeTemplate.binding(variables);
+		//获取模板渲染后的结果
+		return beeTemplate.render();
 	}
 
 }

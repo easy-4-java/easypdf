@@ -138,6 +138,7 @@
         <module>easypdf-rythm</module>
         <module>easypdf-thymeleaf</module>
         <module>easypdf-velocity</module>
+        <module>easypdf-webmvc</module>
         <module>easypdf-webit</module>
         <module>easypdf-xhtml</module>
     </modules>

@@ -42,6 +42,18 @@ public final class HtmlPdfConverter {
         HtmlConverter.convertToPdf(html, out, props);
     }
 
+    /** 渲染 HTML 为 Tagged PDF（写入结构树，供无损往返读取）。 */
+    public static void htmlToPdfTagged(String html, OutputStream out) throws IOException {
+        Objects.requireNonNull(html, "html must not be null");
+        Objects.requireNonNull(out, "out must not be null");
+        com.itextpdf.kernel.pdf.PdfWriter writer = new com.itextpdf.kernel.pdf.PdfWriter(out);
+        PdfDocument pdfDoc = new PdfDocument(writer);
+        pdfDoc.setTagged();
+        ConverterProperties props = new ConverterProperties();
+        props.setFontProvider(FONT_PROVIDER);
+        HtmlConverter.convertToPdf(html, pdfDoc, props);
+    }
+
     /** 从 PDF 文件逐页提取纯文本。 */
     public static String pdfToText(File pdf) throws IOException {
         Objects.requireNonNull(pdf, "pdf must not be null");

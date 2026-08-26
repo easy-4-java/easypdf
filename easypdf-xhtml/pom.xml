@@ -28,14 +28,6 @@
 		</dependency>
 
 		<!-- Docx4j ImportXHTML（版本由父 POM 的 docx4j-importxhtml.version 管理） -->
-		<dependency>
-			<groupId>org.docx4j</groupId>
-			<artifactId>xhtmlrenderer</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.docx4j</groupId>
-			<artifactId>docx4j-ImportXHTML</artifactId>
-		</dependency>
 
 		<!-- https://mvnrepository.com/artifact/net.sourceforge.cssparser/cssparser -->
 		<dependency>
@@ -231,13 +223,7 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<configuration>
 					<!-- 历史遗留的 demo 示例类（非测试、依赖旧 iText5/旧 JDK API，无法编译） -->
-					<testExcludes>
-						<exclude>**/Demo4HTMLCn.java</exclude>
-						<exclude>**/HtmlConverter.java</exclude>
-						<exclude>**/HtmlToDOCDemo.java</exclude>
-						<exclude>**/WebPageToImage.java</exclude>
-					</testExcludes>
-				</configuration>
+						</configuration>
 			</plugin>
 		</plugins>
 	</build>

@@ -15,19 +15,6 @@
 
 	<dependencies>
 		<dependency>
-			<groupId>javax.servlet</groupId>
-			<artifactId>javax.servlet-api</artifactId>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.commons</groupId>
-			<artifactId>commons-lang3</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>commons-io</groupId>
-			<artifactId>commons-io</artifactId>
-		</dependency>
-		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
 		</dependency>
@@ -36,14 +23,6 @@
 		<dependency>
 			<groupId>org.docx4j</groupId>
 			<artifactId>docx4j-core</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.docx4j</groupId>
-			<artifactId>docx4j-JAXB-ReferenceImpl</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.docx4j</groupId>
-			<artifactId>docx4j-export-fo</artifactId>
 		</dependency>
 			<dependency>
 			<groupId>com.itextpdf</groupId>
@@ -58,17 +37,7 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<configuration>
 					<!-- 历史遗留的 docx4j 旧 JAXB 示例（javax.xml.bind 已随 JDK 移除，无法编译） -->
-					<testExcludes>
-						<exclude>**/AddingTableOfContent.java</exclude>
-						<exclude>**/Docx4j_Helper.java</exclude>
-						<exclude>**/Docx4j_删除所有批注_S3_Test.java</exclude>
-						<exclude>**/Docx4j_合并单元格_S4_Test.java</exclude>
-						<exclude>**/Docx4j_工具类_S3_Test.java</exclude>
-						<exclude>**/Docx4j_替换模板.java</exclude>
-						<exclude>**/Docx4j_读取内容控件_S3_Test.java</exclude>
-						<exclude>**/Docx4j_读取内容控件_S4_Test.java</exclude>
-					</testExcludes>
-				</configuration>
+						</configuration>
 			</plugin>
 		</plugins>
 	</build>

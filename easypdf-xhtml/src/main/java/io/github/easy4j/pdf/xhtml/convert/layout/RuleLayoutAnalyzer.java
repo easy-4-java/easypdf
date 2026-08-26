@@ -52,6 +52,7 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
         // 1) 每页：格线表格（含单元格图片）+ 表格外 chunks 进入分栏/行流水线
         List<Line> allLines = new ArrayList<Line>();
         List<DocumentTable> tables = new ArrayList<DocumentTable>();
+        List<DocumentTable> streamTables = new ArrayList<DocumentTable>();
         List<String> looseImages = new ArrayList<String>();
         if (pages != null) {
             for (PageModel page : pages) {
@@ -101,7 +102,7 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
             int tableLen = streamTableLength(allLines, i);
             if (tableLen >= 3) {
                 DocumentTable st = buildStreamTable(allLines, i, tableLen);
-                current.tables.add(st);
+                streamTables.add(st);
                 i += tableLen;
                 continue;
             }
@@ -141,6 +142,7 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
         }
         doc.sections = sections;
         doc.tables.addAll(tables);
+        doc.tables.addAll(streamTables);
         StringBuilder sec;
         for (String uri : looseImages) {
             doc.sections.get(doc.sections.size() - 1).content =
@@ -337,12 +339,45 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
     // ---------------- 流式表格（无格线，x 对齐） ----------------
 
     private static int streamTableLength(List<Line> lines, int start) {
-        int n = 0;
-        for (int i = start; i < lines.size(); i++) {
-            if (lines.get(i).chunks.size() >= 2) n++;
-            else break;
+        if (start >= lines.size()) {
+            return 0;
+        }
+        List<Float> first = clusterStarts(lines.get(start));
+        if (first.size() < 2) {
+            return 0;
+        }
+        int n = 1;
+        for (int i = start + 1; i < lines.size(); i++) {
+            List<Float> cs = clusterStarts(lines.get(i));
+            if (cs.size() != first.size() || !aligned(first, cs)) {
+                break;
+            }
+            n++;
         }
         return n;
+    }
+
+    /** 行内列簇起始 x（列边界：净间隙 > max(size*1.2, 12pt)）。 */
+    private static List<Float> clusterStarts(Line l) {
+        List<Float> xs = new ArrayList<Float>();
+        PageChunk prev = null;
+        for (PageChunk c : l.chunks) {
+            if (prev == null || c.x - (prev.x + prev.text.length() * prev.size * 0.55f) > Math.max(prev.size * 1.2f, 12f)) {
+                xs.add(Float.valueOf(c.x));
+            }
+            prev = c;
+        }
+        return xs;
+    }
+
+    /** 各行第 k 列起始 x 跨行对齐（±6pt）。 */
+    private static boolean aligned(List<Float> a, List<Float> b) {
+        for (int i = 0; i < a.size(); i++) {
+            if (Math.abs(a.get(i).floatValue() - b.get(i).floatValue()) > 6f) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static DocumentTable buildStreamTable(List<Line> lines, int start, int len) {
@@ -350,10 +385,10 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
         for (int i = 0; i < len; i++) {
             Line l = lines.get(start + i);
             List<String> cells = new ArrayList<String>();
-            PageChunk prev = null;
             StringBuilder cell = new StringBuilder();
+            PageChunk prev = null;
             for (PageChunk c : l.chunks) {
-                if (prev != null && c.x - prev.x > Math.max(prev.size * 4f, 30f)) {
+                if (prev != null && c.x - (prev.x + prev.text.length() * prev.size * 0.55f) > Math.max(prev.size * 1.2f, 12f)) {
                     cells.add(cell.toString().trim());
                     cell = new StringBuilder();
                 }
@@ -361,7 +396,11 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
                 prev = c;
             }
             cells.add(cell.toString().trim());
-            if (i == 0) tbl.headers.add(cells); else tbl.rows.add(cells);
+            if (i == 0) {
+                tbl.headers.add(cells);
+            } else {
+                tbl.rows.add(cells);
+            }
         }
         return tbl;
     }

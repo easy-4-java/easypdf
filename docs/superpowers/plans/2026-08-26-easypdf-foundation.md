@@ -1,6 +1,6 @@
 # easypdf 地基修复计划（Phase 1：P0 构建缺陷 + 测试恢复）
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** 修复 easypdf 三分支的两个 P0 构建缺陷（`easypdf-xhtml/pom.xml` 重复 jsoup 声明导致 Maven 4 无法解析；`disable-javadoc-doclint` profile 常激活 `maven.test.skip=true` 导致全部测试静默跳过），使三分支 `clean verify` 真实执行测试并通过。
 
@@ -27,21 +27,21 @@
 - Consumes: 无（独立修复）
 - Produces: `easypdf-xhtml/pom.xml` 中 `org.jsoup:jsoup` 仅剩第 50 行一处声明（版本 1.22.2 由根 pom `dependencyManagement` 提供）
 
-- [ ] **Step 1: 确认缺陷现状**
+- [x] **Step 1: 确认缺陷现状**
 
 Run: `~/tools/apache-maven-4.0.0-rc-6/bin/mvn -B -ntp validate -pl easypdf-xhtml 2>&1 | grep -E "ERROR|BUILD"`
 Expected: FAIL —— `'dependencies.dependency.(groupId:artifactId:type:classifier)' must be unique: org.jsoup:jsoup:jar`
 
-- [ ] **Step 2: 删除第二处声明**
+- [x] **Step 2: 删除第二处声明**
 
 编辑 `easypdf-xhtml/pom.xml`，删除第 182-185 行（`<dependency>` + `org.jsoup:jsoup` 两行 + `</dependency>`），保留第 50 行第一处声明。
 
-- [ ] **Step 3: 验证 validate 通过**
+- [x] **Step 3: 验证 validate 通过**
 
 Run: `~/tools/apache-maven-4.0.0-rc-6/bin/mvn -B -ntp validate -pl easypdf-xhtml 2>&1 | grep -E "ERROR|BUILD"`
 Expected: BUILD SUCCESS，无 ERROR
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add easypdf-xhtml/pom.xml
@@ -59,21 +59,21 @@ git commit -m "fix(pom): remove duplicate org.jsoup dependency declaration in ea
 - Consumes: 无
 - Produces: 根 pom 中 `disable-javadoc-doclint` profile 不再含 `maven.test.skip`；所有 JDK≥8 构建真实编译并运行测试
 
-- [ ] **Step 1: 确认缺陷现状**
+- [x] **Step 1: 确认缺陷现状**
 
 Run: `/Users/wandl/.zcode/cli/exec/sess_3f63bf5d-4770-4e7f-a1cd-21abd9742e02/call_00_gcjsyO1jZE7ZWbTOBMXX8030-stdout.log` 中 `grep -c "Tests run:"`（或重新跑一次 Maven 3 build 确认）
 Expected: 0（测试从未执行）—— 对照：easydoc 同 profile **没有** `maven.test.skip`，其 947 测试正常执行
 
-- [ ] **Step 2: 编辑根 pom**
+- [x] **Step 2: 编辑根 pom**
 
 删除根 `pom.xml` 第 444 行 `<maven.test.skip>true</maven.test.skip>`（保留同 profile 内 `lombok.version`、`additionalparam`、itext 版本属性）。
 
-- [ ] **Step 3: 验证测试真实执行**
+- [x] **Step 3: 验证测试真实执行**
 
 Run: `~/tools/apache-maven-4.0.0-rc-6/bin/mvn -B -ntp -pl easypdf-core clean verify 2>&1 | grep -E "Tests run:|BUILD"`
 Expected: BUILD SUCCESS，且 `Tests run:` 出现（核心模块测试实跑，不再出现 `No tests to run.`）
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add pom.xml
@@ -91,21 +91,21 @@ git commit -m "fix(pom): remove maven.test.skip from always-active disable-javad
 - Consumes: Task 1、Task 2 的修复
 - Produces: 3.0.x 全量构建 BUILD SUCCESS + 全模块测试真实执行；测试计数基线
 
-- [ ] **Step 1: 全量构建**
+- [x] **Step 1: 全量构建**
 
 Run: `~/tools/apache-maven-4.0.0-rc-6/bin/mvn -B -ntp clean verify 2>&1 | tail -40`
 Expected: BUILD SUCCESS；若有模块测试失败（历史遗留：测试从未跑过，失败属预期），进入 Step 2
 
-- [ ] **Step 2: 逐个处理测试失败（如存在）**
+- [x] **Step 2: 逐个处理测试失败（如存在）**
 
 对每个失败测试：读取失败原因（`grep -A5 "FAIL" target/surefire-reports/*.txt`），区分环境性问题（字体缺失、平台路径）与真实缺陷；修复测试或资源文件，**不修改生产逻辑**；重跑对应模块 `mvn -pl <module> clean verify` 直至通过。
 
-- [ ] **Step 3: 统计测试基线并记录**
+- [x] **Step 3: 统计测试基线并记录**
 
 Run: `grep -h "Tests run:" */target/surefire-reports/*.txt 2>/dev/null | awk -F'[ ,]+' '{s+=$3} END {print "TOTAL:", s}'`（或从日志汇总）
 Expected: 输出 > 0 的总测试数（记录到最终报告）
 
-- [ ] **Step 4: Commit（如有修复）**
+- [x] **Step 4: Commit（如有修复）**
 
 ```bash
 git add -A
@@ -123,12 +123,12 @@ git commit -m "test: fix tests exposed after enabling test execution"
 - Consumes: Task 1-3 的修复内容（两处删除）
 - Produces: 三分支均可构建；1.0.x/2.0.x 使用 Maven 3.9.16 验证（modelVersion 4.0.0）
 
-- [ ] **Step 1: 核对分支差异**
+- [x] **Step 1: 核对分支差异**
 
 Run: `git diff feature/3.0.x feature/1.0.x -- easypdf-xhtml/pom.xml | grep -n "jsoup"` 与 `git diff feature/3.0.x feature/2.0.x -- easypdf-xhtml/pom.xml | grep -n "jsoup"`
 Expected: 确认重复声明行号在 1.0.x/2.0.x 同样存在（第 50 行 + 第 183 行，之前已确认三分支均有）
 
-- [ ] **Step 2: 应用修复到 1.0.x**
+- [x] **Step 2: 应用修复到 1.0.x**
 
 ```bash
 git checkout feature/1.0.x
@@ -136,38 +136,38 @@ git checkout feature/1.0.x
 # 删除根 pom disable-javadoc-doclint profile 中 maven.test.skip=true 行
 ```
 
-- [ ] **Step 3: 验证 1.0.x**
+- [x] **Step 3: 验证 1.0.x**
 
 Run: `/opt/homebrew/bin/mvn -B -ntp clean verify 2>&1 | tail -30`
 Expected: BUILD SUCCESS + `Tests run:` 出现
 
-- [ ] **Step 4: Commit 1.0.x**
+- [x] **Step 4: Commit 1.0.x**
 
 ```bash
 git add -A
 git commit -m "fix(pom): remove duplicate jsoup declaration and maven.test.skip (sync from 3.0.x)"
 ```
 
-- [ ] **Step 5: 应用修复到 2.0.x**（同 Step 2）
+- [x] **Step 5: 应用修复到 2.0.x**（同 Step 2）
 
 ```bash
 git checkout feature/2.0.x
 # 两处删除
 ```
 
-- [ ] **Step 6: 验证 2.0.x**
+- [x] **Step 6: 验证 2.0.x**
 
 Run: `/opt/homebrew/bin/mvn -B -ntp clean verify 2>&1 | tail -30`
 Expected: BUILD SUCCESS + `Tests run:` 出现
 
-- [ ] **Step 7: Commit 2.0.x**
+- [x] **Step 7: Commit 2.0.x**
 
 ```bash
 git add -A
 git commit -m "fix(pom): remove duplicate jsoup declaration and maven.test.skip (sync from 3.0.x)"
 ```
 
-- [ ] **Step 8: 回到 3.0.x 并推送三分支**
+- [x] **Step 8: 回到 3.0.x 并推送三分支**
 
 ```bash
 git checkout feature/3.0.x

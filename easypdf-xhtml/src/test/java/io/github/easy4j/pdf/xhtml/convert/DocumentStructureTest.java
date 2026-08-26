@@ -44,4 +44,26 @@ class DocumentStructureTest {
         doc.sections = Collections.singletonList(h1);
         assertThat(doc.fullMarkdown()).contains("# 标题").contains("x");
     }
+
+    @Test
+    void fullMarkdownDeduplicatesDocTitleAndFirstHeading() {
+        DocumentStructure doc = new DocumentStructure();
+        doc.title = "合同";
+        DocumentSection h1 = new DocumentSection();
+        h1.title = "合同"; h1.level = 1; h1.content = "正文";
+        doc.sections = Collections.singletonList(h1);
+        String md = doc.fullMarkdown();
+        assertThat(md).contains("# 合同").contains("正文");
+        assertThat(md.indexOf("# 合同")).isEqualTo(md.lastIndexOf("# 合同")); // 只出现一次
+    }
+
+    @Test
+    void fullMarkdownKeepsTitleWhenFirstSectionDiffers() {
+        DocumentStructure doc = new DocumentStructure();
+        doc.title = "文档元标题";
+        DocumentSection h1 = new DocumentSection();
+        h1.title = "章标题"; h1.level = 1; h1.content = "x";
+        doc.sections = Collections.singletonList(h1);
+        assertThat(doc.fullMarkdown()).contains("# 文档元标题").contains("# 章标题");
+    }
 }

@@ -24,6 +24,11 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
     private static final Pattern UNORDERED = Pattern.compile("^[•·◦‣\\-]\\s*");
     private static final Pattern ORDERED = Pattern.compile("^(\\d{1,2}|[a-z]|[ivxIVX]{1,4})[.)、]\\s*");
     private static final float COLUMN_GAP = 55f;
+
+    /** 字号量化到 0.5pt 桶，消除渲染浮点噪声（11.2 vs 11.4 等）。 */
+    private static float qsize(float v) {
+        return Math.round(v * 2f) / 2f;
+    }
     private static final float HEAD_FACTOR = 1.22f;
 
     private final LatticeTableFinder tableFinder = new LatticeTableFinder();
@@ -52,6 +57,7 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
         // 1) 每页：格线表格（含单元格图片）+ 表格外 chunks 进入分栏/行流水线
         List<Line> allLines = new ArrayList<Line>();
         List<DocumentTable> tables = new ArrayList<DocumentTable>();
+        List<DocumentTable> streamTables = new ArrayList<DocumentTable>();
         List<String> looseImages = new ArrayList<String>();
         if (pages != null) {
             for (PageModel page : pages) {
@@ -84,9 +90,10 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
         // 2) 页眉页脚剔除（≥2 页、≥60% 页面重复的顶部/底部行）
         allLines = stripHeaderFooter(allLines, pages != null ? pages.size() : 0);
 
-        // 3) 跨页断词合并 + 4) 正文字号众数
+        // 3) 跨页断词合并 + 4) 正文字号众数（排除封面艺术字 run）
         joinHyphenated(allLines);
-        float bodySize = bodyMode(allLines);
+        float coverSize = coverRunSize(allLines);
+        float bodySize = bodyMode(allLines, coverSize);
 
         // 5) 组装 sections（标题切分）+ 列表 + 流式表格
         DocumentSection current = new DocumentSection();
@@ -95,13 +102,14 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
         List<DocumentSection> sections = new ArrayList<DocumentSection>();
         StringBuilder body = new StringBuilder();
 
+        boolean currentIsHeading = false;
         int i = 0;
         while (i < allLines.size()) {
             // 流式表格尝试（连续 ≥3 行、≥2 列 x 对齐）
             int tableLen = streamTableLength(allLines, i);
             if (tableLen >= 3) {
                 DocumentTable st = buildStreamTable(allLines, i, tableLen);
-                current.tables.add(st);
+                streamTables.add(st);
                 i += tableLen;
                 continue;
             }
@@ -109,17 +117,26 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
             String text = ln.text.trim();
             if (text.isEmpty()) { i++; continue; }
 
-            if (ln.size >= bodySize * HEAD_FACTOR && !text.isEmpty()) {
-                // 标题：新 section
-                if (body.length() > 0) {
-                    current.content = body.toString().trim();
-                    sections.add(current);
-                    body = new StringBuilder();
+            // 标题护栏：候选字号仅取最大 3 档；行长 >80 的大字不判标题；
+            // 封面艺术字（均匀大字号多行 run）排除；标题须为孤立行（下一行字号不同）
+            List<Float> headSizes = headingSizes(allLines, bodySize);
+            boolean isolated = i == allLines.size() - 1
+                    || Math.abs(allLines.get(i + 1).size - ln.size) > 0.5f;
+            if (ln.size >= bodySize * HEAD_FACTOR && text.length() <= 80
+                    && Math.abs(ln.size - coverSize) > 0.5f
+                    && isolated
+                    && headSizes.contains(Float.valueOf(qsize(ln.size)))) {
+                // 标题：flush 旧段（有内容才入列），换新 current（延迟入列）
+                current.content = body.toString().trim();
+                if (!current.content.isEmpty() || currentIsHeading) {
+                    sections.add(current); // 标题段即使暂无正文也保留（相邻标题场景）
                 }
+                body = new StringBuilder();
                 current = new DocumentSection();
                 current.title = text;
                 current.level = headingLevel(allLines, i, bodySize);
-                sections.add(current);
+                currentIsHeading = true;
+                // 延迟入列：由下一次 flush 或循环末尾统一 add，避免标题段整段重复
                 i++;
                 continue;
             }
@@ -132,7 +149,7 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
             i++;
         }
         current.content = body.toString().trim();
-        if (!current.content.isEmpty() || current.title != null) {
+        if (!current.content.isEmpty() || (current.title != null && !current.title.isEmpty())) {
             sections.add(current);
         }
         if (sections.isEmpty()) {
@@ -141,6 +158,7 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
         }
         doc.sections = sections;
         doc.tables.addAll(tables);
+        doc.tables.addAll(streamTables);
         StringBuilder sec;
         for (String uri : looseImages) {
             doc.sections.get(doc.sections.size() - 1).content =
@@ -292,31 +310,79 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
         }
     }
 
-    private static float bodyMode(List<Line> lines) {
+    private static float bodyMode(List<Line> lines, float coverSize) {
         Map<Integer, Long> hist = new HashMap<Integer, Long>();
+        long total = 0;
         for (Line l : lines) {
+            if (coverSize > 0 && Math.abs(l.size - coverSize) <= 0.5f) {
+                continue; // 封面艺术字不参与正文众数
+            }
             int key = Math.round(l.size * 2);
             Long c = hist.get(key);
             long add = Math.max(1, l.text.length());
             hist.put(key, c == null ? add : c.longValue() + add);
+            total += add;
         }
-        long best = -1; int bestKey = 24;
+        if (hist.isEmpty()) {
+            return 11.0f; // 无可用正文行（如纯表格文档）：取常规正文默认值，避免空表死循环
+        }
+        long best = -1; int bestKey = Integer.MAX_VALUE;
         for (Map.Entry<Integer, Long> e : hist.entrySet()) {
-            if (e.getValue() > best) { best = e.getValue(); bestKey = e.getKey(); }
+            boolean better = e.getValue() > best
+                    || (e.getValue() == best && e.getKey() < bestKey); // 并列取最小字号（正文偏置）
+            if (better) { best = e.getValue(); bestKey = e.getKey(); }
         }
         return bestKey / 2f;
     }
 
-    private static int headingLevel(List<Line> lines, int idx, float bodySize) {
-        // 候选标题字号降序 → 1..6
+    /**
+     * 封面艺术字检测：最大字号构成 ≥2 行的连续 run，且比次大 distinct 字号大 50% 以上。
+     * 返回该字号；无则返回 -1。
+     */
+    private static float coverRunSize(List<Line> lines) {
+        List<Float> distinct = new ArrayList<Float>();
+        for (Line l : lines) {
+            Float q = Float.valueOf(qsize(l.size));
+            if (!distinct.contains(q)) distinct.add(q);
+        }
+        if (distinct.isEmpty()) return -1f;
+        Collections.sort(distinct, Collections.reverseOrder());
+        float largest = distinct.get(0);
+        int run = 1, maxRun = 1;
+        for (int i = 1; i < lines.size(); i++) {
+            if (Math.abs(lines.get(i).size - lines.get(i - 1).size) <= 0.5f
+                    && Math.abs(lines.get(i).size - largest) <= 0.5f) {
+                run++;
+                maxRun = Math.max(maxRun, run);
+            } else {
+                run = 1;
+            }
+        }
+        if (maxRun < 2) return -1f;
+        if (distinct.size() < 2) return -1f;
+        float next = distinct.get(1);
+        return largest > next * 1.5f ? largest : -1f;
+    }
+
+    /** 候选标题字号（降序，最多 3 档）：超出档位的大字降为正文。 */
+    private static List<Float> headingSizes(List<Line> lines, float bodySize) {
         List<Float> sizes = new ArrayList<Float>();
         for (Line l : lines) {
-            if (l.size >= bodySize * HEAD_FACTOR && !sizes.contains(Float.valueOf(l.size))) {
-                sizes.add(l.size);
+            float q = qsize(l.size);
+            if (l.size >= bodySize * HEAD_FACTOR && !sizes.contains(Float.valueOf(q))) {
+                sizes.add(Float.valueOf(q));
             }
         }
         Collections.sort(sizes, Collections.reverseOrder());
-        int lv = sizes.indexOf(Float.valueOf(lines.get(idx).size)) + 1;
+        if (sizes.size() > 3) {
+            sizes = new ArrayList<Float>(sizes.subList(0, 3));
+        }
+        return sizes;
+    }
+
+    private static int headingLevel(List<Line> lines, int idx, float bodySize) {
+        List<Float> sizes = headingSizes(lines, bodySize);
+        int lv = sizes.indexOf(Float.valueOf(qsize(lines.get(idx).size))) + 1;
         return Math.max(1, Math.min(6, lv));
     }
 
@@ -337,12 +403,45 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
     // ---------------- 流式表格（无格线，x 对齐） ----------------
 
     private static int streamTableLength(List<Line> lines, int start) {
-        int n = 0;
-        for (int i = start; i < lines.size(); i++) {
-            if (lines.get(i).chunks.size() >= 2) n++;
-            else break;
+        if (start >= lines.size()) {
+            return 0;
+        }
+        List<Float> first = clusterStarts(lines.get(start));
+        if (first.size() < 2) {
+            return 0;
+        }
+        int n = 1;
+        for (int i = start + 1; i < lines.size(); i++) {
+            List<Float> cs = clusterStarts(lines.get(i));
+            if (cs.size() != first.size() || !aligned(first, cs)) {
+                break;
+            }
+            n++;
         }
         return n;
+    }
+
+    /** 行内列簇起始 x（列边界：净间隙 > max(size*1.2, 12pt)）。 */
+    private static List<Float> clusterStarts(Line l) {
+        List<Float> xs = new ArrayList<Float>();
+        PageChunk prev = null;
+        for (PageChunk c : l.chunks) {
+            if (prev == null || c.x - (prev.x + prev.text.length() * prev.size * 0.55f) > Math.max(prev.size * 1.2f, 12f)) {
+                xs.add(Float.valueOf(c.x));
+            }
+            prev = c;
+        }
+        return xs;
+    }
+
+    /** 各行第 k 列起始 x 跨行对齐（±6pt）。 */
+    private static boolean aligned(List<Float> a, List<Float> b) {
+        for (int i = 0; i < a.size(); i++) {
+            if (Math.abs(a.get(i).floatValue() - b.get(i).floatValue()) > 6f) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static DocumentTable buildStreamTable(List<Line> lines, int start, int len) {
@@ -350,10 +449,10 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
         for (int i = 0; i < len; i++) {
             Line l = lines.get(start + i);
             List<String> cells = new ArrayList<String>();
-            PageChunk prev = null;
             StringBuilder cell = new StringBuilder();
+            PageChunk prev = null;
             for (PageChunk c : l.chunks) {
-                if (prev != null && c.x - prev.x > Math.max(prev.size * 4f, 30f)) {
+                if (prev != null && c.x - (prev.x + prev.text.length() * prev.size * 0.55f) > Math.max(prev.size * 1.2f, 12f)) {
                     cells.add(cell.toString().trim());
                     cell = new StringBuilder();
                 }
@@ -361,7 +460,11 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
                 prev = c;
             }
             cells.add(cell.toString().trim());
-            if (i == 0) tbl.headers.add(cells); else tbl.rows.add(cells);
+            if (i == 0) {
+                tbl.headers.add(cells);
+            } else {
+                tbl.rows.add(cells);
+            }
         }
         return tbl;
     }

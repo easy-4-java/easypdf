@@ -31,7 +31,11 @@ public final class DocumentStructure {
 
     public String fullMarkdown() {
         StringBuilder sb = new StringBuilder();
-        if (title != null && !title.isEmpty()) {
+        boolean dedup = title != null && !title.isEmpty()
+                && sections != null && !sections.isEmpty()
+                && sections.get(0).level == 1
+                && title.trim().equals(sections.get(0).title == null ? "" : sections.get(0).title.trim());
+        if (!dedup && title != null && !title.isEmpty()) {
             sb.append("# ").append(title).append('\n').append('\n');
         }
         sb.append(toMarkdown());

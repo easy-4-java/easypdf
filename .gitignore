@@ -187,3 +187,6 @@ demos/**/*.mp4
 
 # 本地 dreamina CLI 采集输出
 .cli-audit/
+
+# 测试运行产物（WordprocessingMLHtmlTemplate 测试在当前目录生成）
+easypdf-xhtml/test

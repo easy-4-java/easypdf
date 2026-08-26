@@ -49,6 +49,23 @@
 
 	<build>
 		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<!-- 历史遗留的 docx4j 旧 JAXB 示例（javax.xml.bind 已随 JDK 移除，无法编译） -->
+					<testExcludes>
+						<exclude>**/AddingTableOfContent.java</exclude>
+						<exclude>**/Docx4j_Helper.java</exclude>
+						<exclude>**/Docx4j_删除所有批注_S3_Test.java</exclude>
+						<exclude>**/Docx4j_合并单元格_S4_Test.java</exclude>
+						<exclude>**/Docx4j_工具类_S3_Test.java</exclude>
+						<exclude>**/Docx4j_替换模板.java</exclude>
+						<exclude>**/Docx4j_读取内容控件_S3_Test.java</exclude>
+						<exclude>**/Docx4j_读取内容控件_S4_Test.java</exclude>
+					</testExcludes>
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
 

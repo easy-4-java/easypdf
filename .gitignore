@@ -189,4 +189,4 @@ demos/**/*.mp4
 .cli-audit/
 
 # 测试运行产物（WordprocessingMLHtmlTemplate 测试在当前目录生成）
-easypdf-xhtml/test
+easypdf-*/test

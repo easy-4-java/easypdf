@@ -179,10 +179,6 @@
 			<artifactId>pdfbox</artifactId>
 			<version>3.0.7</version>
 		</dependency>
-		<dependency>
-			<groupId>org.jsoup</groupId>
-			<artifactId>jsoup</artifactId>
-		</dependency>
 		<!-- 将HTML内容转换为PDF文档 -->
 		<!-- https://mvnrepository.com/artifact/com.openhtmltopdf/openhtmltopdf-pdfbox -->
 		<!-- https://mvnrepository.com/artifact/com.openhtmltopdf/openhtmltopdf-core -->

@@ -45,6 +45,10 @@
 			<groupId>org.docx4j</groupId>
 			<artifactId>docx4j-export-fo</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>com.itextpdf</groupId>
+			<artifactId>html2pdf</artifactId>
+		</dependency>
 	</dependencies>
 
 	<build>

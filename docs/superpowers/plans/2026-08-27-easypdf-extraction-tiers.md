@@ -1,6 +1,6 @@
 # easypdf 分层提取引擎计划（Line 1：Tier1 格线表格+图 → Tier2 字号聚类/分栏 → Tier3 ML 扩展点）
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** 将现有骨架级 `PdfStructureExtractor` 升级为**三层质量分级**的提取引擎：Tier1（格线表格 Lattice + 图片 base64，含表格内嵌图片）、Tier2（字号聚类标题/分栏阅读顺序/流式表格/列表/页眉页脚剔除）、Tier3（ML 布局模型扩展点 SPI + REST 适配器骨架，默认关闭）。对外 API（`PdfStructureExtractor.extract` / `EasyPdf.pdfToStructuredMarkdown`）不变，默认走规则引擎（Tier1+2 叠加）。
 
@@ -51,7 +51,7 @@
   - `public final class PageModelListener implements com.itextpdf.kernel.pdf.canvas.parser.listener.IEventListener`，构造器 `PageModelListener(int pageNo)`；`List<PageModel> getModels()`（单页一模型）；静态便捷 `public static List<PageModel> collect(PdfDocument doc)`（逐页 new listener + `new PdfCanvasProcessor(listener).processPageContent(page)`）
   - Task 3/4 的所有分析器消费 `List<PageModel>`
 
-- [ ] **Step 1: 写失败测试（夹具用自家 html2pdf 生成）**
+- [x] **Step 1: 写失败测试（夹具用自家 html2pdf 生成）**
 
 ```java
 package io.github.easy4j.pdf.xhtml.convert.layout;
@@ -118,9 +118,9 @@ class PageModelListenerTest {
 }
 ```
 
-- [ ] **Step 2: 运行确认失败**（类不存在）
+- [x] **Step 2: 运行确认失败**（类不存在）
 
-- [ ] **Step 3: 实现 4 个模型类 + Listener**
+- [x] **Step 3: 实现 4 个模型类 + Listener**
 
 ```java
 // PageChunk.java
@@ -303,9 +303,9 @@ public final class PageModelListener implements IEventListener {
 
 > 实施注意：`TextRenderInfo.getMcid()` 若 7.1.10 签名不同（javap 已见 Image/Path 有 getMcid），编译期按实际调整；`ImageCtm` 锚点先取平移分量，测试通过即可（html2pdf 生成的 PDF 够用）。
 
-- [ ] **Step 4: 运行测试确认通过（3 tests）**
+- [x] **Step 4: 运行测试确认通过（3 tests）**
 
-- [ ] **Step 5: Commit** `feat(extract): add PageModel single-pass collector (chunks/images/strokes)`
+- [x] **Step 5: Commit** `feat(extract): add PageModel single-pass collector (chunks/images/strokes)`
 
 ---
 
@@ -324,10 +324,10 @@ public final class PageModelListener implements IEventListener {
   - `public final class PdfExtractionProperties { public enum Engine { AUTO, RULE, REST } public Engine engine = Engine.AUTO; public String restEndpoint; public int restTimeoutMillis = 10000; public static PdfExtractionProperties defaults(); }`
   - `PdfStructureExtractor.extract(File)` → `extract(File, PdfExtractionProperties)`（旧签名委托 defaults()）
 
-- [ ] **Step 1: 写失败测试**：`RuleLayoutAnalyzer.analyze(单页模型, 空 hints, "t")` 返回 DocumentStructure，sections 非空、fullMarkdown 含 chunk 文本
-- [ ] **Step 2: 确认失败** → **Step 3: 实现三类 + 改造 Extractor**（保持 null/missing-file 既有测试绿）
-- [ ] **Step 4: 全部既有测试 + 新测试通过**（`mvn -pl easypdf-xhtml -am test` 全绿）
-- [ ] **Step 5: Commit** `feat(extract): add LayoutAnalyzer SPI with engine selection, extractor rewired`
+- [x] **Step 1: 写失败测试**：`RuleLayoutAnalyzer.analyze(单页模型, 空 hints, "t")` 返回 DocumentStructure，sections 非空、fullMarkdown 含 chunk 文本
+- [x] **Step 2: 确认失败** → **Step 3: 实现三类 + 改造 Extractor**（保持 null/missing-file 既有测试绿）
+- [x] **Step 4: 全部既有测试 + 新测试通过**（`mvn -pl easypdf-xhtml -am test` 全绿）
+- [x] **Step 5: Commit** `feat(extract): add LayoutAnalyzer SPI with engine selection, extractor rewired`
 
 ---
 
@@ -346,7 +346,7 @@ public final class PageModelListener implements IEventListener {
   - 单元格归属：chunk 取 baseline 中点、image 取 CTM 锚点，落在 cell 矩形内即归入；cell Markdown = 文本 + 空格 + `![img](data:image/{ext};base64,{b64})`
   - 首行→headers，其余→rows（与现有 DocumentTable 兼容）
 
-- [ ] **Step 1: 写失败测试（核心场景：表格内嵌图片）**
+- [x] **Step 1: 写失败测试（核心场景：表格内嵌图片）**
 
 ```java
 @Test
@@ -369,8 +369,8 @@ void latticeTableWithEmbeddedImageProducesCellMarkdown() throws Exception {
 }
 ```
 
-- [ ] **Step 2: 确认失败** → **Step 3: 实现 LatticeTableFinder + RuleLayoutAnalyzer 接入**（表格区域内的 chunks/images 从正文流剔除，避免重复输出）
-- [ ] **Step 4: 测试通过 + 既有全绿** → **Step 5: Commit** `feat(extract): tier1 lattice table extraction with embedded cell images`
+- [x] **Step 2: 确认失败** → **Step 3: 实现 LatticeTableFinder + RuleLayoutAnalyzer 接入**（表格区域内的 chunks/images 从正文流剔除，避免重复输出）
+- [x] **Step 4: 测试通过 + 既有全绿** → **Step 5: Commit** `feat(extract): tier1 lattice table extraction with embedded cell images`
 
 ---
 
@@ -389,13 +389,13 @@ void latticeTableWithEmbeddedImageProducesCellMarkdown() throws Exception {
 6. **断词合并**：行尾 `[\u4e00-\u9fa5A-Za-z]-$` 与下一行行首拼接
 7. **流式表格**：非 lattice 但连续 ≥3 行满足"≥2 列 x 对齐（±3pt）且行高一致"→ stream 表（首行为 header）
 
-- [ ] **Step 1: 写失败测试**（4 个）：
+- [x] **Step 1: 写失败测试**（4 个）：
   - `<h1>/<h2>/<p>` 渲染 → `# / ##` 且正文合并成段
   - 双栏 `<table><tr><td style="width:50%">` 或 float 两栏 → 阅读顺序不串列（断言左栏文本先于右栏）
   - `<ul><li>` → `- `；`<ol><li>` → `1. `
   - 页眉重复（`<div style="position:fixed;top:0">页眉X</div>` 多页）→ 输出不含"页眉"
-- [ ] **Step 2: 确认失败** → **Step 3: 实现规则 1-7**（每规则独立私有方法，纯函数式便于测）
-- [ ] **Step 4: 测试通过 + 全量回归** → **Step 5: Commit** `feat(extract): tier2 heuristics (font clustering, columns, lists, stream tables, header/footer strip)`
+- [x] **Step 2: 确认失败** → **Step 3: 实现规则 1-7**（每规则独立私有方法，纯函数式便于测）
+- [x] **Step 4: 测试通过 + 全量回归** → **Step 5: Commit** `feat(extract): tier2 heuristics (font clustering, columns, lists, stream tables, header/footer strip)`
 
 ---
 
@@ -411,16 +411,16 @@ void latticeTableWithEmbeddedImageProducesCellMarkdown() throws Exception {
   - `PdfExtractionProperties.engine=REST` 且 endpoint 为空 → 构造时抛 `IllegalArgumentException`；AUTO+不可达（连接失败）→ 静默回退 RULE 并打 SLF4J warn
   - 超时 `restTimeoutMillis`；响应非 200 → 抛 IOException（AUTO 下回退）
 
-- [ ] **Step 1: 写测试**：本地 `HttpServer`（`com.sun.net.httpserver`，JDK 自带）返回固定 JSON → 断言 sections 解析正确；endpoint 空抛 IAE；AUTO 不可达回退 RULE（结果含正文）
-- [ ] **Step 2: 确认失败** → **Step 3: 实现** → **Step 4: 通过** → **Step 5: Commit** `feat(extract): tier3 REST layout analyzer extension point with AUTO fallback`
+- [x] **Step 1: 写测试**：本地 `HttpServer`（`com.sun.net.httpserver`，JDK 自带）返回固定 JSON → 断言 sections 解析正确；endpoint 空抛 IAE；AUTO 不可达回退 RULE（结果含正文）
+- [x] **Step 2: 确认失败** → **Step 3: 实现** → **Step 4: 通过** → **Step 5: Commit** `feat(extract): tier3 REST layout analyzer extension point with AUTO fallback`
 
 ---
 
 ### Task 6: 三分支同步 + 推送 + 勾选
 
-- [ ] **Step 1: 3.0.x 全量 verify**（总测试数 ≥ 66 + 新增 ≈ 12）
-- [ ] **Step 2-7: 同步 1.0.x / 2.0.x（`git checkout feature/3.0.x -- easypdf-xhtml/src/.../convert/`）+ 各自全量 verify + commit**
-- [ ] **Step 8: 推送三分支 + `sed 's/- \[ \]/- [x]/g'` 勾选本计划 + commit**
+- [x] **Step 1: 3.0.x 全量 verify**（总测试数 ≥ 66 + 新增 ≈ 12）
+- [x] **Step 2-7: 同步 1.0.x / 2.0.x（`git checkout feature/3.0.x -- easypdf-xhtml/src/.../convert/`）+ 各自全量 verify + commit**
+- [x] **Step 8: 推送三分支 + `sed 's/- \[ \]/- [x]/g'` 勾选本计划 + commit**
 
 ---
 

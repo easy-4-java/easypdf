@@ -1,6 +1,6 @@
 # easypdf Tagged 无损往返计划（Line 2：markdownToPdfTagged + round-trip）
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** 打通"**我们生成的 PDF 无损取回**"路径：`EasyPdf.markdownToPdfTagged(md)` 生成**带结构树（Tagged PDF）**的文件，`EasyPdf.pdfToStructuredMarkdown(file)` 读回时利用结构角色（H1-H6/Table/L）实现**语义级还原**。对自有 PDF 的往返保真度目标：标题层级/列表/表格 **100%**，正文文本 **100%**（图片以 data URI 保内容）。
 
@@ -35,7 +35,7 @@
   - `HtmlPdfConverter.htmlToPdfTagged(String html, OutputStream out) throws IOException` —— 与 `htmlToPdf` 同字体配置，额外 `pdfDoc.setTagged()`
   - `EasyPdf.markdownToPdfTagged(String markdown, File output)` / `(String markdown, OutputStream out)`
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 ```java
 package io.github.easy4j.pdf.xhtml.convert;
@@ -67,9 +67,9 @@ class TaggedGenerationTest {
 }
 ```
 
-- [ ] **Step 2: 确认失败**（方法不存在）
+- [x] **Step 2: 确认失败**（方法不存在）
 
-- [ ] **Step 3: 实现**
+- [x] **Step 3: 实现**
 
 ```java
 // HtmlPdfConverter.java 新增
@@ -104,7 +104,7 @@ public static void markdownToPdfTagged(String markdown, java.io.OutputStream out
 
 > 实施注意：若 `convertToPdf(html, pdfDocument, props)` 在 2.1.7 不写结构树（`isTagged()` 为 false），则回退方案：改用 `HtmlConverter.convertToElements` + 手动 `setTagged` 前置；测试 Step 1 就是守门员，失败即调整实现路径。
 
-- [ ] **Step 4: 测试通过** → **Step 5: Commit** `feat(tagged): markdownToPdfTagged writes structure tree`
+- [x] **Step 4: 测试通过** → **Step 5: Commit** `feat(tagged): markdownToPdfTagged writes structure tree`
 
 ---
 
@@ -119,7 +119,7 @@ public static void markdownToPdfTagged(String markdown, java.io.OutputStream out
   - Tagged 路径：`walk(elem)` 时收集该元素所有后继 mcid；`PageModelListener.collect` 产出的 chunks 按 `(page, mcid)` 建索引 `Map<String, List<PageChunk>>`（key=`page+":"+mcid`）；section.content = 索引文本拼接；`TR`（Table 结构子元素）的 mcid 落入对应 cell
   - 既有 `DocumentStructure` POJO 不动
 
-- [ ] **Step 1: 写 round-trip 失败测试（核心验收）**
+- [x] **Step 1: 写 round-trip 失败测试（核心验收）**
 
 ```java
 package io.github.easy4j.pdf.xhtml.convert;
@@ -155,20 +155,20 @@ class TaggedRoundTripTest {
 }
 ```
 
-- [ ] **Step 2: 确认失败**（当前 Tagged 路径 actualText 为空 → 断言不过）
+- [x] **Step 2: 确认失败**（当前 Tagged 路径 actualText 为空 → 断言不过）
 
-- [ ] **Step 3: 实现 mcid 关联**
+- [x] **Step 3: 实现 mcid 关联**
   - `PdfStructureExtractor.extract`：先 `PageModelListener.collect(pdfDoc)` 建 mcid 索引；Tagged 时遍历结构树（H1-H6/TR/TH/TD/P/L/LI 角色），每个 `PdfStructElem` 通过其后继 marked-content 引用取 mcid 集合（`PdfMcr`/`PdfStructElem.getKids()` 递归，`((PdfMcr) kid).getMcid()` + 所属页 ref 匹配 page）；文本=索引拼接；TD→cell、TR→row、首 TR→headers
-- [ ] **Step 4: round-trip 测试 + 全量回归通过**
-- [ ] **Step 5: Commit** `feat(tagged): mcid-linked tagged extraction enables lossless round-trip`
+- [x] **Step 4: round-trip 测试 + 全量回归通过**
+- [x] **Step 5: Commit** `feat(tagged): mcid-linked tagged extraction enables lossless round-trip`
 
 ---
 
 ### Task 3: 三分支同步 + 推送 + 勾选
 
-- [ ] **Step 1: 3.0.x 全量 verify**
-- [ ] **Step 2-7: 同步 1.0.x / 2.0.x（HtmlPdfConverter.java + EasyPdf.java + PdfStructureExtractor.java + 2 个测试）+ verify + commit**
-- [ ] **Step 8: 推送三分支 + 勾选本计划 + commit**
+- [x] **Step 1: 3.0.x 全量 verify**
+- [x] **Step 2-7: 同步 1.0.x / 2.0.x（HtmlPdfConverter.java + EasyPdf.java + PdfStructureExtractor.java + 2 个测试）+ verify + commit**
+- [x] **Step 8: 推送三分支 + 勾选本计划 + commit**
 
 ---
 

@@ -23,33 +23,25 @@ import java.util.Properties;
 
 import org.docx4j.Docx4jProperties;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
-import io.github.easy4j.pdf.WordprocessingMLTemplate;
 import io.github.easy4j.pdf.utils.ConfigUtils;
-import io.github.easy4j.pdf.xhtml.WordprocessingMLHtmlTemplate;
 import org.rythmengine.Rythm;
 import org.rythmengine.RythmEngine;
+import io.github.easy4j.pdf.template.AbstractStringTemplateWrappingPdfTemplate;
 
 /**
  * Implementation of wordprocessing m l rythm template extending WordprocessingMLTemplate.
  *
  * @author <a href="https://github.com/loong10k">Loong Wan</a>
  */
-public class WordprocessingMLRythmTemplate extends WordprocessingMLTemplate {
+public class RythmPdfTemplate extends AbstractStringTemplateWrappingPdfTemplate {
 	
 	protected RythmEngine engine;
-	protected WordprocessingMLHtmlTemplate mlHtmlTemplate;
 
-	public WordprocessingMLRythmTemplate() {
-		this(false, false);
-	}
 	
-	public WordprocessingMLRythmTemplate(boolean landscape, boolean altChunk) {
-		this.mlHtmlTemplate = new WordprocessingMLHtmlTemplate(landscape, altChunk) ;
-	}
 	
-	public WordprocessingMLRythmTemplate(WordprocessingMLHtmlTemplate template) {
-		this.mlHtmlTemplate = template;
-	}
+	
+	
+	
 
 	/**
 	 * 使用Rythm模板引擎渲染模板
@@ -58,18 +50,6 @@ public class WordprocessingMLRythmTemplate extends WordprocessingMLTemplate {
 	 * @return {@link WordprocessingMLPackage} 对象
 	 * @throws Exception ：异常对象
 	 */
-	@Override
-	public WordprocessingMLPackage process(String template, Map<String, Object> variables) throws Exception {
-		// 创建模板输出内容接收对象
-		StringWriter output = new StringWriter();
-		// 使用Rythm模板引擎渲染模板
-		getEngine().getTemplate(template , variables).render(output);
-		//获取模板渲染后的结果
-		String html = output.toString();
-		//使用HtmlTemplate进行渲染
-		return mlHtmlTemplate.process(html, variables);
-	}
-	
 	public RythmEngine getEngine() throws IOException {
 		return engine == null ? getInternalEngine() : engine;
 	}
@@ -100,6 +80,19 @@ public class WordprocessingMLRythmTemplate extends WordprocessingMLTemplate {
 		// 设置模板引擎，减少重复初始化消耗
         this.setEngine(engine);
         return engine;
+	}
+
+
+	@Override
+	protected String render(String template, Map<String, Object> variables) throws Exception {
+
+		// 创建模板输出内容接收对象
+		StringWriter output = new StringWriter();
+		// 使用Rythm模板引擎渲染模板
+		getEngine().getTemplate(template , variables).render(output);
+		//获取模板渲染后的结果
+		String html = output.toString();
+		return html;
 	}
 
 }

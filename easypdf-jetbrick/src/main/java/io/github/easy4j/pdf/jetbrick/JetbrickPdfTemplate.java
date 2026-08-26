@@ -22,38 +22,30 @@ import java.util.Properties;
 
 import org.docx4j.Docx4jProperties;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
-import io.github.easy4j.pdf.WordprocessingMLTemplate;
 import io.github.easy4j.pdf.utils.ConfigUtils;
-import io.github.easy4j.pdf.xhtml.WordprocessingMLHtmlTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import jetbrick.config.ConfigLoader;
 import jetbrick.template.JetConfig;
 import jetbrick.template.JetEngine;
+import io.github.easy4j.pdf.template.AbstractStringTemplateWrappingPdfTemplate;
 
 /**
  * Implementation of wordprocessing m l jetbrick template extending WordprocessingMLTemplate.
  *
  * @author <a href="https://github.com/loong10k">Loong Wan</a>
  */
-public class WordprocessingMLJetbrickTemplate extends WordprocessingMLTemplate {
+public class JetbrickPdfTemplate extends AbstractStringTemplateWrappingPdfTemplate {
 	
-	protected final Logger LOG = LoggerFactory.getLogger(WordprocessingMLJetbrickTemplate.class);
+	protected final Logger LOG = LoggerFactory.getLogger(JetbrickPdfTemplate.class);
 	protected JetEngine engine;
-	protected WordprocessingMLHtmlTemplate mlHtmlTemplate;
 
-	public WordprocessingMLJetbrickTemplate() {
-		this(false, false);
-	}
 	
-	public WordprocessingMLJetbrickTemplate(boolean landscape, boolean altChunk) {
-		this.mlHtmlTemplate = new WordprocessingMLHtmlTemplate(landscape, altChunk) ;
-	}
 	
-	public WordprocessingMLJetbrickTemplate(WordprocessingMLHtmlTemplate template) {
-		this.mlHtmlTemplate = template;
-	}
+	
+	
+	
 
 	/**
 	 * 使用Jetbrick模板引擎渲染模板
@@ -62,18 +54,7 @@ public class WordprocessingMLJetbrickTemplate extends WordprocessingMLTemplate {
 	 * @return {@link WordprocessingMLPackage} 对象
 	 * @throws Exception ：异常对象
 	 */
-	@Override
-	public WordprocessingMLPackage process(String template, Map<String, Object> variables) throws Exception {
-		// 创建模板输出内容接收对象
-		StringWriter output = new StringWriter();
-		// 使用Jetbrick模板引擎渲染模板
-		getEngine().getTemplate(template).render(variables, output);
-		//获取模板渲染后的结果
-		String html = output.toString();
-		//使用HtmlTemplate进行渲染
-		return mlHtmlTemplate.process(html, variables);
-	}
-	
+
 	public JetEngine getEngine() throws IOException {
 		return engine == null ? getInternalEngine() : engine;
 	}
@@ -98,6 +79,19 @@ public class WordprocessingMLJetbrickTemplate extends WordprocessingMLTemplate {
 		// 设置模板引擎，减少重复初始化消耗
         this.setEngine(engine);
         return engine;
+	}
+
+
+	@Override
+	protected String render(String template, Map<String, Object> variables) throws Exception {
+
+		// 创建模板输出内容接收对象
+		StringWriter output = new StringWriter();
+		// 使用Jetbrick模板引擎渲染模板
+		getEngine().getTemplate(template).render(variables, output);
+		//获取模板渲染后的结果
+		String html = output.toString();
+		return html;
 	}
 
 }

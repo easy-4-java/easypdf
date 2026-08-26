@@ -20,6 +20,9 @@ import com.itextpdf.kernel.pdf.tagging.StandardRoles;
 
 import io.github.easy4j.pdf.xhtml.convert.layout.PageModel;
 import io.github.easy4j.pdf.xhtml.convert.layout.PageModelListener;
+import io.github.easy4j.pdf.xhtml.convert.layout.PdfExtractionProperties;
+import io.github.easy4j.pdf.xhtml.convert.layout.RestLayoutAnalyzer;
+import io.github.easy4j.pdf.xhtml.convert.layout.RuleLayoutAnalyzer;
 
 /**
  * PDF 结构识别：Tagged PDF 优先（结构树角色 + mcid 关联 PageModel 取真实文本，
@@ -31,7 +34,14 @@ public final class PdfStructureExtractor {
     }
 
     public static DocumentStructure extract(File pdf) throws IOException {
+        return extract(pdf, PdfExtractionProperties.defaults());
+    }
+
+    public static DocumentStructure extract(File pdf, PdfExtractionProperties props) throws IOException {
         Objects.requireNonNull(pdf, "pdf must not be null");
+        if (props == null) {
+            props = PdfExtractionProperties.defaults();
+        }
         if (!pdf.isFile()) {
             throw new IOException("PDF not found: " + pdf.getAbsolutePath());
         }
@@ -52,7 +62,22 @@ public final class PdfStructureExtractor {
                 extractTaggedMcid(doc, pdfDoc, root, models);
             }
             if (doc.sections.isEmpty() && doc.tables.isEmpty()) {
-                extractHeuristic(doc, pdfDoc);
+                // 非 Tagged：按引擎选择走 LayoutAnalyzer（REST 优先可回退 RULE，默认 RULE）
+                boolean wantsRest = props.engine == PdfExtractionProperties.Engine.REST
+                        || (props.engine == PdfExtractionProperties.Engine.AUTO && props.restEndpoint != null);
+                if (wantsRest) {
+                    try {
+                        return new RestLayoutAnalyzer(props)
+                                .analyze(java.nio.file.Files.readAllBytes(pdf.toPath()), doc.title);
+                    } catch (IOException e) {
+                        if (props.engine == PdfExtractionProperties.Engine.REST) {
+                            throw e;
+                        }
+                        org.slf4j.LoggerFactory.getLogger(PdfStructureExtractor.class)
+                                .warn("REST layout analyzer failed, fallback to RULE: {}", e.getMessage());
+                    }
+                }
+                doc = new RuleLayoutAnalyzer().analyze(models, null, doc.title);
             }
         }
         return doc;

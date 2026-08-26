@@ -37,10 +37,10 @@ public class PdfTemplateView extends AbstractView {
     }
 
     public void setTemplate(PdfTemplate template) {
-        this.template = template;
+        this.template = java.util.Objects.requireNonNull(template, "template must not be null");
     }
 
     public void setTemplateName(String templateName) {
-        this.templateName = templateName;
+        this.templateName = java.util.Objects.requireNonNull(templateName, "templateName must not be null");
     }
 }

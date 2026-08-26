@@ -23,6 +23,6 @@ public class PdfViewResolver implements ViewResolver {
     }
 
     public void setTemplate(PdfTemplate template) {
-        this.template = template;
+        this.template = java.util.Objects.requireNonNull(template, "template must not be null");
     }
 }

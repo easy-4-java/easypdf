@@ -32,6 +32,7 @@ public final class MarkdownConverter {
 
     /** 将 Markdown 文本渲染为 HTML 字符串（CommonMark + GFM 表格/删除线/任务列表）。 */
     public static String mdToHtml(String markdown) {
+        java.util.Objects.requireNonNull(markdown, "markdown must not be null");
         return RENDERER.render(PARSER.parse(markdown));
     }
 

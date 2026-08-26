@@ -131,7 +131,7 @@ class WordprocessingMLFreemarkerTemplateTest {
     void instanceSetPreTemplateLoadersShouldBeCallable() {
         try {
             WordprocessingMLFreemarkerTemplate instance = new WordprocessingMLFreemarkerTemplate();
-            instance.setPreTemplateLoaders((Object[]) null);
+            instance.setPreTemplateLoaders((TemplateLoader[]) null);
         } catch (Throwable e) { /* expected */ }
         assertThat(WordprocessingMLFreemarkerTemplate.class).isNotNull();
     }
@@ -141,7 +141,7 @@ class WordprocessingMLFreemarkerTemplateTest {
     void instanceSetPostTemplateLoadersShouldBeCallable() {
         try {
             WordprocessingMLFreemarkerTemplate instance = new WordprocessingMLFreemarkerTemplate();
-            instance.setPostTemplateLoaders((Object[]) null);
+            instance.setPostTemplateLoaders((TemplateLoader[]) null);
         } catch (Throwable e) { /* expected */ }
         assertThat(WordprocessingMLFreemarkerTemplate.class).isNotNull();
     }

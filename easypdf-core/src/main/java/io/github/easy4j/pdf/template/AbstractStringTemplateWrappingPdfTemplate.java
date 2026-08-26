@@ -2,6 +2,7 @@ package io.github.easy4j.pdf.template;
 
 import java.io.OutputStream;
 import java.util.Map;
+import java.util.Objects;
 
 import io.github.easy4j.pdf.PdfTemplate;
 import io.github.easy4j.pdf.core.convert.HtmlPdfConverter;
@@ -17,6 +18,9 @@ public abstract class AbstractStringTemplateWrappingPdfTemplate extends PdfTempl
 
     @Override
     public void process(String template, Map<String, Object> variables, OutputStream out) throws Exception {
+        Objects.requireNonNull(template, "template must not be null");
+        Objects.requireNonNull(variables, "variables must not be null");
+        Objects.requireNonNull(out, "out must not be null");
         String html = render(template, variables);
         HtmlPdfConverter.htmlToPdf(html, out);
     }

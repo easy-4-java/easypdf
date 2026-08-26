@@ -32,7 +32,7 @@ import org.thymeleaf.templateresolver.UrlTemplateResolver;
 import io.github.easy4j.pdf.template.AbstractStringTemplateWrappingPdfTemplate;
 
 /**
- * Implementation of wordprocessing m l thymeleaf template extending WordprocessingMLTemplate.
+ * Thymeleaf 模板引擎适配器：渲染模板为 HTML 后输出 PDF。
  *
  * @author <a href="https://github.com/loong10k">Loong Wan</a>
  */

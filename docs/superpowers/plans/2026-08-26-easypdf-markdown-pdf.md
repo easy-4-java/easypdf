@@ -4,7 +4,9 @@
 
 **Goal:** 为 easypdf 补齐 Markdown ↔ PDF 快速双向转换，镜像 easydoc 的 Markdown ↔ docx 方案：复用现有 HTML 管线、零新引擎——`markdownToPdf` 走「flexmark 解析 MD → HTML → iText 7 html2pdf → PDF」，`pdfToMarkdown` 走「iText PdfTextExtractor 提取文本 → 结构化 → Markdown」。
 
-**Architecture:** 转换能力全部落在 `easypdf-xhtml` 模块（已具备 html2pdf/jsoup/iText 7 全套依赖，且无 compiler 排除、测试可真实执行；与 easydoc 的 markdown 方案放 easydoc-xhtml 对称）。新增 `io.github.easy4j.pdf.xhtml.convert` 包：`MarkdownConverter`（flexmark mdToHtml + textToMarkdown）、`HtmlPdfConverter`（html2pdf 封装 + 中文字体 FontProvider + pdfToText）、`EasyPdf` 门面（markdownToPdf / pdfToMarkdown）。代码保持 Java 8 语法，flexmark 为 Java 8 库，可直接同步 1.0.x/2.0.x。
+**Architecture:** 转换能力全部落在 `easypdf-xhtml` 模块（已具备 html2pdf/jsoup/iText 7 全套依赖，且无 compiler 排除、测试可真实执行；与 easydoc 的 markdown 方案放 easydoc-xhtml 对称）。新增 `io.github.easy4j.pdf.xhtml.convert` 包：`MarkdownConverter`（flexmark mdToHtml + textToMarkdown）、`EasyPdf` 门面（markdownToPdf / pdfToMarkdown）。代码保持 Java 8 语法，flexmark 为 Java 8 库，可直接同步 1.0.x/2.0.x。
+
+**计划更新（2026-08-26，core 重构先行完成）**：core 重构计划（2026-08-26-easypdf-core-pdf.md）已在 `easypdf-core` 建立 `io.github.easy4j.pdf.core.convert.HtmlPdfConverter`（html2pdf + FontProvider 中文字体 + pdfToText）。本计划原 Task 3（在 xhtml 建 HtmlPdfConverter）**取消**，`EasyPdf` 与测试直接复用 core 版 `HtmlPdfConverter`；本计划 Task 1 的 flexmark 依赖已按 core 重构中的修正落地（`flexmark` + `flexmark-ext-tables/strikethrough/tasklist`，`flexmark-html` 在 Maven Central 不存在）。
 
 **Tech Stack:** flexmark-java 0.64.8（core + html）、iText 7.1.10 html2pdf 2.1.7（已有）、JUnit 5 + AssertJ（已有）、Maven 4（3.0.x）/ Maven 3.9.16（1.0.x/2.0.x）。
 
@@ -353,7 +355,7 @@ git commit -m "feat(markdown): add HtmlPdfConverter with html2pdf rendering and 
 
 - [ ] **Step 1: 写失败测试**
 
-`EasyPdfTest.java`：
+`EasyPdfTest.java`（`EasyPdf` 直接调用 core 版 `HtmlPdfConverter`，不建 xhtml 版重复类）：
 ```java
 package io.github.easy4j.pdf.xhtml.convert;
 

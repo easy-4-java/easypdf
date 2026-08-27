@@ -12,9 +12,7 @@ public final class DocumentStructure {
     public String toMarkdown() {
         StringBuilder sb = new StringBuilder();
         if (sections != null) {
-            for (DocumentSection s : sections) {
-                appendSection(sb, s);
-            }
+            appendSections(sb, sections);
         }
         if (tables != null) {
             for (DocumentTable t : tables) {
@@ -42,6 +40,36 @@ public final class DocumentStructure {
         return sb.toString();
     }
 
+    /**
+     * 序列化一组同级 sections：跳过与前一个已输出 section 标题相同且无任何内容的空段
+     * （相邻重复去重；从"只查 title vs sections[0]"扩展到任意相邻重复）。
+     * 仅对 content/children/tables/images 全空的条目去重，携带内容的同名段不丢弃。
+     */
+    private static void appendSections(StringBuilder sb, List<DocumentSection> secs) {
+        if (secs == null) return;
+        String lastTitle = null;
+        boolean any = false;
+        for (DocumentSection s : secs) {
+            if (any && isEmptyEntry(s) && normTitle(s.title).equals(lastTitle)) {
+                continue; // 相邻重复空段：只输出一次
+            }
+            appendSection(sb, s);
+            lastTitle = normTitle(s.title);
+            any = true;
+        }
+    }
+
+    private static String normTitle(String t) {
+        return t == null ? "" : t.trim();
+    }
+
+    private static boolean isEmptyEntry(DocumentSection s) {
+        return (s.content == null || s.content.isEmpty())
+                && (s.children == null || s.children.isEmpty())
+                && (s.tables == null || s.tables.isEmpty())
+                && (s.images == null || s.images.isEmpty());
+    }
+
     private static void appendSection(StringBuilder sb, DocumentSection s) {
         for (int i = 0; i < s.level; i++) {
             sb.append('#');
@@ -50,9 +78,7 @@ public final class DocumentStructure {
         if (s.content != null && !s.content.isEmpty()) {
             sb.append(s.content.trim()).append('\n').append('\n');
         }
-        for (DocumentSection c : s.children) {
-            appendSection(sb, c);
-        }
+        appendSections(sb, s.children);
         for (DocumentTable t : s.tables) {
             appendTable(sb, t);
         }
@@ -64,12 +90,12 @@ public final class DocumentStructure {
     private static void appendTable(StringBuilder sb, DocumentTable t) {
         if (t.headers == null || t.headers.isEmpty()) {
             for (List<String> row : t.rows) {
-                sb.append('|').append(joinCells(row)).append("|\n");
+                sb.append('|').append(joinCells(row)).append('\n');
             }
             return;
         }
         for (List<String> hdr : t.headers) {
-            sb.append('|').append(joinCells(hdr)).append("|\n");
+            sb.append('|').append(joinCells(hdr)).append('\n');
         }
         sb.append('|');
         for (int i = 0; i < t.headers.get(0).size(); i++) {
@@ -77,7 +103,7 @@ public final class DocumentStructure {
         }
         sb.append('\n');
         for (List<String> row : t.rows) {
-            sb.append('|').append(joinCells(row)).append("|\n");
+            sb.append('|').append(joinCells(row)).append('\n');
         }
         sb.append('\n');
     }

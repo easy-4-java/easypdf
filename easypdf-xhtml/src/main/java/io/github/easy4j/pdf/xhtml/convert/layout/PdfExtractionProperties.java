@@ -42,6 +42,13 @@ public final class PdfExtractionProperties {
     /** REST 失败重试次数（对 429/5xx/IOException 生效），指数退避 base 500ms，上限 3。 */
     public int restRetries = 0;
 
+    // ---- Round 4-P2 安全护栏 ----
+
+    /** 单文件大小上限（字节）：读取前拦截，超出即 LIMIT_EXCEEDED 拒绝解析；≤0 表示不限制。 */
+    public long maxFileBytes = 104857600L;
+    /** 页数上限：打开后立刻校验，超出即 LIMIT_EXCEEDED；≤0 表示不限制。 */
+    public int maxPages = 5000;
+
     public static PdfExtractionProperties defaults() {
         return new PdfExtractionProperties();
     }

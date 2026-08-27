@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import com.itextpdf.kernel.PdfException;
 import com.itextpdf.kernel.pdf.PdfDictionary;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfReader;
@@ -42,9 +43,16 @@ public final class PdfStructureExtractor {
     public static DocumentStructure extract(File pdf, PdfExtractionProperties props) throws IOException {
         Objects.requireNonNull(pdf, "pdf must not be null");
         if (!pdf.isFile()) {
-            throw new IOException("PDF not found: " + pdf.getAbsolutePath());
+            // NOT_FOUND 分级包装；文案与历史行为一致（仍为 IOException 子类）
+            throw new ExtractionException(ExtractionException.Code.NOT_FOUND,
+                "PDF not found: " + pdf.getAbsolutePath());
         }
         PdfExtractionProperties p = props != null ? props : PdfExtractionProperties.defaults();
+        // 护栏：文件大小上限在读取前拦截（防恶意巨型 PDF DoS）
+        if (p.maxFileBytes > 0 && pdf.length() > p.maxFileBytes) {
+            throw new ExtractionException(ExtractionException.Code.LIMIT_EXCEEDED,
+                "PDF size " + pdf.length() + " bytes exceeds maxFileBytes=" + p.maxFileBytes);
+        }
         String cacheKey = null;
         if (p.cacheEnabled) {
             // LRU 缓存（默认关）：key 绑定路径+修改时间+长度，文件变化自然失效
@@ -54,13 +62,43 @@ public final class PdfStructureExtractor {
                 return hit;
             }
         }
-        try (ParsedDoc pd = new ParsedDoc(pdf)) {
+        try (ParsedDoc pd = openClassified(pdf)) {
+            // 护栏：页数上限在打开后立刻检查
+            int pages = pd.pdfDoc.getNumberOfPages();
+            if (p.maxPages > 0 && pages > p.maxPages) {
+                throw new ExtractionException(ExtractionException.Code.LIMIT_EXCEEDED,
+                    "PDF page count " + pages + " exceeds maxPages=" + p.maxPages);
+            }
             DocumentStructure doc = extractAll(pd, p);
             if (cacheKey != null) {
                 ExtractCache.shared().put(cacheKey, doc);
             }
             return doc;
         }
+    }
+
+    /** 打开并解析：构造期失败按底层消息分级映射为 ENCRYPTED/CORRUPT，不再裸抛。 */
+    private static ParsedDoc openClassified(File pdf) throws IOException {
+        try {
+            return new ParsedDoc(pdf);
+        } catch (IOException e) {
+            throw classifyOpenFailure(e);
+        } catch (PdfException e) {
+            // BadPasswordException 等属于 iText 的运行时异常，同样按消息分诊
+            throw classifyOpenFailure(e);
+        }
+    }
+
+    /** 消息含 password/encrypt（不区分大小写）判定为加密，其余解析失败归为损坏。 */
+    private static ExtractionException classifyOpenFailure(Throwable cause) {
+        String msg = cause.getMessage() == null ? "" : cause.getMessage();
+        String lower = msg.toLowerCase(java.util.Locale.ROOT);
+        if (lower.contains("password") || lower.contains("encrypt")) {
+            return new ExtractionException(ExtractionException.Code.ENCRYPTED,
+                "PDF is encrypted or password protected: " + msg, cause);
+        }
+        return new ExtractionException(ExtractionException.Code.CORRUPT,
+            "Failed to parse PDF (may be corrupted): " + msg, cause);
     }
 
     // ---------------- 页级流式提取（大文件不再全量驻留） ----------------

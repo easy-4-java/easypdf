@@ -4,7 +4,9 @@
 
 [![Java](https://img.shields.io/badge/Java-21-orange)](https://github.com/easy-4-java/easypdf) [![License](https://img.shields.io/badge/license-Apache%202.0-green)](./LICENSE)
 
-Fast Word / PDF document generation based on docx4j / iText and a variety of template engines. Generate WordprocessingML documents from templates (Freemarker, Velocity, Thymeleaf, Beetl, Rythm, Jetbrick, HTTL, Webit, JSP) or directly from XHTML, with iText-based PDF support in the core module.
+A pure-Java PDF toolkit built on iText 7: generate PDF from Markdown / XHTML templates with nine pluggable template engines, and read PDF back as structured content (headings / tables / lists / images) designed for LLM agents — no native binaries, no external services by default.
+
+Detailed usage guide: [docs/USAGE.md](./docs/USAGE.md).
 
 ## Table of Contents
 
@@ -22,50 +24,48 @@ Fast Word / PDF document generation based on docx4j / iText and a variety of tem
 
 ## 1. Project Overview
 
-`easypdf` (project description: *Building Word/PDF documents based on XHTML templates using Docx4j and iText*) is the Word/PDF sibling of `easydoc`. A core module (`easypdf-core`) defines the `WordprocessingMLTemplate` abstraction plus docx4j/WML utilities and iText-based context support; dedicated modules adapt each template engine and the XHTML import path.
+`easypdf` is a **pure PDF** library: it turns Markdown/XHTML into tagged or plain PDF, and turns PDF back into Markdown or a structured document tree (`DocumentStructure`) that agents can navigate (summary -> page range -> chunks). The 3.0.x line is PDF-only; the legacy docx4j Word pipeline has been removed.
 
 | What it is | What it is not |
 |:---|:---|
-| Template-driven Word (.docx) generation via docx4j | A pure PDF-only library (PDF support is iText-based, in the core module) |
-| Pluggable template engines + XHTML import | A document editor or viewer |
-| iText context / font / cache helpers for PDF workflows | A cloud document service |
-
-Typical use cases:
-
-| Use case | Module |
-|:---|:---|
-| Fill a Word template with a variable map | `easypdf-core` (`WordprocessingMLDocxTemplate`) |
-| Render templates with your favorite engine | `easypdf-freemarker` / `-velocity` / `-thymeleaf` / `-beetl` / `-rythm` / `-jetbrick` / `-httl` / `-webit` / `-jsp` |
-| Convert XHTML to a WordprocessingML package | `easypdf-xhtml` |
-| iText-based PDF rendering context | `easypdf-core` (`ItextContext`, `BaseFontFactory`, cache managers) |
-| Manage shared dependency versions | `easypdf-bom` |
-
-**Project status:** stable.
+| Markdown / XHTML -> PDF generation (`EasyPdf.markdownToPdf`, `PdfTemplate` + 9 engines) | A Word/.docx library |
+| PDF -> structured extraction engine (Tier1 grids + Tier2 heuristics + Tier3 REST ML hook) | An OCR engine for scanned PDFs (no text layer = not covered) |
+| Agent-friendly API: `summary` / `pageRange` / `chunked` | A cloud document service |
+| Tagged-PDF lossless round-trip for self-generated files | A PDF editor or viewer |
 
 ## 2. Features & Status
 
 | Feature | Status | Notes |
 |:---|:---|:---|
-| `WordprocessingMLTemplate` abstraction | Available | `process(String template, Map<String,Object> variables)` -> `WordprocessingMLPackage` |
-| `WordprocessingMLDocxTemplate` | Available | Source/placeholder/output configuration, e.g. `process(File sourceDocx, String template, Map, File outputDocx)`, `placeholderStart` / `placeholderEnd` |
-| Freemarker / Velocity / Thymeleaf / Beetl / Rythm / Jetbrick / HTTL / Webit / JSP engines | Available | One module per engine (`WordprocessingML{Engine}Template`) |
-| XHTML import | Available | `WordprocessingMLHtmlTemplate` + `XHTMLImporterUtils` (`easypdf-xhtml`) |
-| iText support | Available | `ItextContext` (singleton), `BaseFontFactory`, `D07_ParseHtmlAsian`, template/cache managers |
-| WML utilities | Available | Element/paragraph/border utilities, font mapping (`ChineseFont`, `FontMapperHolder`) |
-| Output pipeline | Available | `WordprocessingMLPackageRender` / `-Writer` / `-Extractor` |
-| Build events / error handling | Available | `bus.event` (build start/finish) and `bus.error.Slf4jLogger` |
-| CI pipeline | Not configured | No CI workflow files in the repository |
+| Markdown -> PDF / Tagged PDF | Available | `EasyPdf.markdownToPdf(...)` / `markdownToPdfTagged(...)` (GFM headings, tables, code blocks, lists) |
+| PDF -> Markdown / structured Markdown | Available | `EasyPdf.pdfToMarkdown(File)` / `pdfToStructuredMarkdown(File)` |
+| Structure extraction (rule engine) | Available | `PdfStructureExtractor.extract(File)` — Tier1 lattice tables + embedded images, Tier2 clustered headings/columns/streaming tables/lists/header-footer removal |
+| Extraction quality tiers | Available | Three paths, see the table below |
+| Agent API | Available | `EasyPdf.summary` / `pageRange` / `chunked`; per-page streaming via `PdfStructureExtractor.extractPerPage` (cancellable) |
+| Error classification & report | Available | `ExtractionException.Code` (`CORRUPT` / `ENCRYPTED` / `LIMIT_EXCEEDED` / `NOT_FOUND`), never-throw `extractWithReport` returning `ExtractReport` |
+| Safety guards | Available | `maxFileBytes` / `maxPages` limits reject oversized or malicious PDFs before parsing |
+| Template engines | Available | Freemarker / Velocity / Thymeleaf / Beetl / Rythm / Jetbrick / HTTL / Webit / JSP adapters producing PDF |
+| Spring WebMVC view layer | Available | `easypdf-webmvc` (`jakarta.servlet` on this line) |
+
+### Three quality paths
+
+Accuracy depends on where the PDF comes from. easypdf offers three complementary paths instead of one number:
+
+| Path | Entry point | Fidelity | Scope |
+|:---|:---|:---|:---|
+| Tagged round-trip | `markdownToPdfTagged` then `pdfToStructuredMarkdown` | ~100% (headings level / lists / tables / body text; images kept as data URIs) | Only PDFs generated by easypdf itself (structure tree is written at generation time) |
+| Rule engine (Tier1 + Tier2) | `pdfToStructured(File)` / `pdfToStructuredMarkdown(File)`, default | ~80% on typical born-digital office PDFs | No network, no extra deps; scanned PDFs without a text layer are out of scope |
+| REST ML layout service (Tier3) | `PdfExtractionProperties.engine = REST` + `restEndpoint` | 90–95% (dictated by the external service) | POSTs raw PDF bytes to a layout service (docling/MinerU style); AUTO mode falls back to RULE when unreachable |
 
 ## 3. Requirements & Compatibility
 
-| Requirement | Version (1.0.x line) |
+| Requirement | Version (3.0.x line) |
 |:---|:---|
-| JDK | 8 |
-| Maven | 3.0+ |
-| docx4j | 8.3.15 (`docx4j-core` + JAXB variants) |
-| docx4j-ImportXHTML | 8.3.15 |
-| docx4j-xhtmlrenderer | 3.0.0 |
-| iText | 7.1.10 |
+| JDK | 21 |
+| Maven | 3.0+ (wrapper included: `./mvnw`) |
+| iText | 7.1.10 kernel + pdfHTML (`html2pdf` 2.1.7) |
+
+Extraction sources use Java-8-compatible syntax so the same sources run on all three version lines.
 
 ### Version lines
 
@@ -75,44 +75,32 @@ Typical use cases:
 | `feature/2.0.x` | JDK 17 | `2.0.x.*` |
 | `feature/3.0.x` | JDK 21 | `3.0.x.*` |
 
-### docx4j version matrix (extension modules decoupled from core)
-
-| Line | JDK | `docx4j` (core/JAXB) | `docx4j-export-fo` | `docx4j-ImportXHTML` | `xhtmlrenderer` |
-|:---|:---|:---|:---|:---|:---|
-| 1.0.x | 8 | 8.3.15 | 8.3.15 | 8.3.15 | 3.0.0 |
-| 2.0.x | 17 | 11.5.2 | 11.5.2 | 11.4.8 | 3.0.0 |
-| 3.0.x | 21 | 11.5.2 | 11.5.2 | 11.4.8 | 3.0.0 |
-
-The three lines keep the same Java sources/comments/docs; only the JDK baseline and the matching Maven dependency versions differ. The main code does not depend directly on `javax/jakarta.xml.bind` types, which keeps the sources identical across lines.
+The three lines keep identical Java sources/comments/docs; only the JDK baseline and matching dependency versions differ.
 
 ## 4. Architecture & Modules
 
 ```text
-  Template sources                      easypdf modules                 output
-  ----------------                      ---------------                 ------
-  .docx template   ->  easypdf-core  (WordprocessingMLTemplate)
-  .ftl / .vm / .tpl ->  easypdf-{freemarker,velocity,beetl,thymeleaf,
-                          rythm,jetbrick,httl,webit,jsp}
-  .html / .xhtml   ->  easypdf-xhtml (WordprocessingMLHtmlTemplate +
-                          XHTMLImporterUtils)
-                                 |
-                                 v
-                      WordprocessingMLPackage (docx4j)
-                                 |
-              +------------------+------------------+
-              v                                     v
-       render / write / extract               iText context
-       (easypdf-core io.*)                    (ItextContext, fonts,
-              |                                cache managers)
-              v
-           output .docx  /  PDF-oriented rendering support
+  Input                     easypdf modules                        Output
+  -----                     ---------------                        ------
+  Markdown (.md string) --> easypdf-xhtml EasyPdf facade
+                              |- markdownToPdf(Tagged)             plain / tagged .pdf
+                              '- pdfToMarkdown / pdfToStructured   text / DocumentStructure
+  XHTML template ----------> easypdf-core HtmlPdfConverter
+                              |- htmlToPdf / htmlToPdfTagged       .pdf
+                              '- pdfToText                         flat text
+  Freemarker/Velocity/... -> easypdf-{freemarker,...} {Engine}PdfTemplate
+                                                       |                 .pdf
+  HTTP request ------------> easypdf-webmvc PdfViewResolver / AbstractITextPdfView
+                                                       v
+                                            Agent API: summary -> pageRange -> chunked
 ```
 
 | Module | Responsibility |
 |:---|:---|
-| `easypdf-core` | Template abstraction, docx4j/WML utilities, iText context and cache helpers, render/write/extract pipeline |
-| `easypdf-xhtml` | HTML/XHTML -> `WordprocessingMLPackage` |
-| `easypdf-freemarker` / `easypdf-velocity` / `easypdf-thymeleaf` / `easypdf-beetl` / `easypdf-rythm` / `easypdf-jetbrick` / `easypdf-httl` / `easypdf-webit` / `easypdf-jsp` | One adapter per template engine |
+| `easypdf-core` | `PdfTemplate` abstraction, `HtmlPdfConverter` (`htmlToPdf`, `htmlToPdfTagged`, `pdfToText`, font registration), shared conversion context |
+| `easypdf-xhtml` | `EasyPdf` facade (Markdown <-> PDF), structure tree model (`DocumentStructure` and friends), three-tier extraction engine (`convert/layout`: rule analyzer, REST analyzer, LRU cache), Agent API (`summary` / `pageRange` / `chunked`) |
+| `easypdf-freemarker` / `-velocity` / `-thymeleaf` / `-beetl` / `-rythm` / `-jetbrick` / `-httl` / `-webit` / `-jsp` | One `{Engine}PdfTemplate` adapter per template engine |
+| `easypdf-webmvc` | Spring WebMVC integration (`jakarta.servlet`): `PdfViewResolver`, `AbstractITextPdfView`, `PdfTemplateView` |
 | `easypdf-bom` | Dependency management BOM |
 
 ## 5. Installation
@@ -122,12 +110,12 @@ The three lines keep the same Java sources/comments/docs; only the JDK baseline 
 ```xml
 <dependency>
     <groupId>io.github.easy4j</groupId>
-    <artifactId>easypdf-core</artifactId>
+    <artifactId>easypdf-xhtml</artifactId>
     <version>3.0.x.x.20260630-SNAPSHOT</version>
 </dependency>
 ```
 
-Add the engine module(s) you need, e.g.:
+Add an engine module if you render templates, e.g.:
 
 ```xml
 <dependency>
@@ -140,82 +128,140 @@ Add the engine module(s) you need, e.g.:
 ### Gradle
 
 ```groovy
-implementation 'io.github.easy4j:easypdf-core:3.0.x.x.20260630-SNAPSHOT'
+implementation 'io.github.easy4j:easypdf-xhtml:3.0.x.x.20260630-SNAPSHOT'
 implementation 'io.github.easy4j:easypdf-freemarker:3.0.x.x.20260630-SNAPSHOT'
 ```
 
-**Availability:** the artifacts are published to the Aliyun private Maven repository and distributed through GitHub Releases; they have not yet been published to Maven Central.
+**Availability:** artifacts are distributed through GitHub Releases; they have not yet been published to Maven Central.
 
 ## 6. Quick Start
 
 ```java
-import io.github.easy4j.pdf.WordprocessingMLDocxTemplate;
-import io.github.easy4j.pdf.WordprocessingMLTemplate;
-import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
+import io.github.easy4j.pdf.xhtml.convert.EasyPdf;
+import io.github.easy4j.pdf.xhtml.convert.DocumentStructure;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.io.File;
 
-WordprocessingMLTemplate template = new WordprocessingMLDocxTemplate();
+// Markdown -> PDF (GFM headings/tables/code/lists rendered)
+EasyPdf.markdownToPdf("# Hello\n\nWorld", new File("hello.pdf"));
 
-Map<String, Object> variables = new HashMap<>();
-variables.put("title", "Invoice");
-variables.put("amount", "128.00");
+// PDF -> structured markdown (headings/tables/lists restored)
+String md = EasyPdf.pdfToStructuredMarkdown(new File("hello.pdf"));
 
-WordprocessingMLPackage doc = template.process("invoice.tpl", variables);
-doc.save(new java.io.File("invoice.docx"));
+// PDF -> structure tree an agent can walk
+DocumentStructure doc = EasyPdf.pdfToStructured(new File("report.pdf"));
+doc.title;                      // document title
+doc.sections.get(0).level;      // heading level (1..6)
+doc.sections.get(0).content;    // body text
+doc.tables.get(0).rows;         // List<List<String>>
 ```
 
-Expected result: `invoice.docx` is generated from the template with the variables applied.
+More end-to-end recipes (tagged round-trip, agent pipelines, REST extension, error handling) live in [docs/USAGE.md](./docs/USAGE.md).
 
 ## 7. Configuration
 
-The core library is template-driven and requires no configuration file. `WordprocessingMLDocxTemplate` exposes bean-style settings:
+Conversion needs no configuration. Extraction behavior is tuned through `io.github.easy4j.pdf.xhtml.convert.layout.PdfExtractionProperties` (pass to `PdfStructureExtractor.extract(File, props)`); all fields are public with safe defaults, so only override what you need:
 
-| Setting | Description |
-|:---|:---|
-| `sourceDocx` | Source `.docx` template file (optional) |
-| `outputDocx` | Output `.docx` file (optional) |
-| `placeholderStart` / `placeholderEnd` | Placeholder delimiters for variable replacement |
+| Field | Type | Default | Description |
+|:---|:---|:---|:---|
+| `engine` | `Engine` enum | `AUTO` | `AUTO` = REST if reachable else RULE; `RULE` = rule engine only (zero deps); `REST` = REST layout service only, failure is fatal |
+| `restEndpoint` | `String` | `null` | URL of the Tier3 layout service (POST body = raw PDF bytes, response JSON contract in USAGE.md); required for `engine = REST` |
+| `restTimeoutMillis` | `int` | `10000` | REST connect/read timeout |
+| `restRetries` | `int` | `0` | Retries on 429/5xx/IOException with exponential backoff (base 500 ms, max 3 attempts) |
+| `maxFileBytes` | `long` | `104857600` (100 MB) | Guard: reject files larger than this with `LIMIT_EXCEEDED` before parsing |
+| `maxPages` | `int` | `5000` | Guard: reject documents with more pages than this with `LIMIT_EXCEEDED` |
+| `cacheEnabled` | `boolean` | `false` | LRU extraction cache (shared, capacity 16; key = path + mtime + length, invalidated on file change) |
+| `headFactor` | `float` | `1.22f` | Heading candidate when font size >= body size x this factor |
+| `maxHeadingTiers` | `int` | `3` | Max distinct candidate heading sizes; surplus tiers demote to body |
+| `columnGapPt` | `float` | `55f` | Minimum whitespace gap (pt) that triggers column detection |
+| `streamAlignTolPt` | `float` | `6f` | Cross-row x tolerance (pt) when assembling streaming (borderless) tables |
+| `coverRatio` | `float` | `1.5f` | Cover art-text ratio vs. second-largest font size |
+| `coverRunMinLines` | `int` | `2` | Minimum consecutive lines forming a cover art-text run |
+| `cjkGapFactor` | `float` | `0.22f` | CJK/Latin word-space factor: insert a space when inter-chunk gap > previous chunk font size x this |
 
-Engine adapters additionally accept engine-specific settings programmatically (e.g. FreeMarker `Configuration` via `setEngine(...)`).
+Example:
+
+```java
+PdfExtractionProperties p = PdfExtractionProperties.defaults();
+p.maxFileBytes = 20L * 1024 * 1024;   // tighter guard for untrusted uploads
+p.cacheEnabled = true;                // repeated extraction of unchanged files
+DocumentStructure doc = PdfStructureExtractor.extract(pdf, p);
+```
 
 ## 8. Core Usage / API
 
-### 8.1 Template abstraction
+All entry points live behind the `EasyPdf` facade in `easypdf-xhtml`. Signatures below are verbatim from source.
 
-```java
-public abstract class WordprocessingMLTemplate {
-    public abstract WordprocessingMLPackage process(String template, Map<String, Object> variables) throws Exception;
-}
-```
+### 8.1 Facade methods
 
-### 8.2 Freemarker template
-
-```java
-WordprocessingMLFreemarkerTemplate tpl = new WordprocessingMLFreemarkerTemplate();
-WordprocessingMLPackage doc = tpl.process("report.ftl", variables);
-```
-
-### 8.3 XHTML to Word
-
-```java
-WordprocessingMLHtmlTemplate html = new WordprocessingMLHtmlTemplate();
-WordprocessingMLPackage doc = html.process(new File("page.html"));
-```
-
-### 8.4 Core packages
-
-| Package | Contents |
+| Method | Returns |
 |:---|:---|
-| `io.github.easy4j.pdf` | `WordprocessingMLTemplate`, `WordprocessingMLDocxTemplate`, `Docx4jConstants` |
-| `io.github.easy4j.pdf.io` | `WordprocessingMLPackageRender` / `-Writer` / `-Extractor` / `WordprocessingMLTemplateWriter` |
-| `io.github.easy4j.pdf.core` | iText context (`ItextContext`, `ItextContextInitListener`), `BaseFontFactory`, `D07_ParseHtmlAsian` |
-| `io.github.easy4j.pdf.core.cache` | `PDFTemplateCacheManager`, `XMLEclmentCacheManager` |
-| `io.github.easy4j.pdf.core.filter` | Document caching filters (`DocumentCacheFilter`, `CacheResponseWrapper`, ...) |
-| `io.github.easy4j.pdf.utils` | docx4j / WML / zip / font / paragraph / border utilities |
-| `io.github.easy4j.pdf.wml` | WML element rendering and `WMLType` |
-| `io.github.easy4j.pdf.fonts` | `ChineseFont`, `FontMapperHolder` |
+| `markdownToPdf(String markdown, File output)` / `(String, OutputStream)` | `void` |
+| `markdownToPdfTagged(String markdown, File output)` / `(String, OutputStream)` | `void` (Tagged PDF for lossless round-trip) |
+| `pdfToMarkdown(File pdf)` / `(InputStream in)` | `String` best-effort markdown |
+| `pdfToStructuredMarkdown(File pdf)` / `(InputStream in)` | `String` structured markdown (headings/tables/lists) |
+| `pdfToStructured(File pdf)` | `DocumentStructure` tree |
+| `summary(File pdf)` / `(InputStream in, String filename)` | `DocumentSummary` |
+| `pageRange(File pdf, int fromPage, int toPage)` | `String` markdown of a 1-based inclusive page range |
+| `chunked(File pdf, ChunkOptions opts)` | `List<DocumentChunk>` RAG-ready chunks |
+
+### 8.2 Agent API — summary first, then targeted reads
+
+```java
+// 1) Cheap overview: page/char/table/image counts + section skeleton (level <= 2)
+DocumentSummary s = EasyPdf.summary(new File("annual-report.pdf"));
+for (DocumentSummarySection sec : s.sections) {
+    System.out.println("p" + sec.pageNo + " L" + sec.level + " " + sec.title);
+}
+
+// 2) Read only what the task needs: e.g. pages 12..18
+String detail = EasyPdf.pageRange(new File("annual-report.pdf"), 12, 18);
+
+// 3) Or split whole document into embedding-friendly chunks
+ChunkOptions opts = new ChunkOptions();     // maxChars=800, overlapChars=100
+opts.idPrefix = "annual-report.pdf";
+List<DocumentChunk> chunks = EasyPdf.chunked(new File("annual-report.pdf"), opts);
+```
+
+This keeps the full document out of the LLM context: navigate by outline, fetch page ranges on demand, chunk once for retrieval.
+
+### 8.3 Streaming extraction with cancellation
+
+```java
+PdfStructureExtractor.extractPerPage(pdf, props, (pageNo, partial) -> {
+    handle(pagePartial);        // sections/tables/images of a single page
+    return pageNo < stopAt;     // false cancels: remaining pages are never parsed
+});
+```
+
+Each callback receives one page's partial `DocumentStructure`; memory holds only a single page at a time. With the REST engine the whole result arrives as a single callback with `pageNo == 0`.
+
+### 8.4 Error classification
+
+```java
+try {
+    DocumentStructure doc = PdfStructureExtractor.extract(upload);
+} catch (ExtractionException e) {
+    switch (e.getCode()) {
+        case NOT_FOUND:      respond(404); break;
+        case ENCRYPTED:      respond(415, "password protected"); break;
+        case CORRUPT:        respond(422, "not a readable pdf"); break;
+        case LIMIT_EXCEEDED: respond(413, "too large"); break;
+    }
+}
+// Or never-throw variant:
+ExtractReport r = PdfStructureExtractor.extractWithReport(upload, props);
+if (!r.success) { log(r.error); } else { metrics(r.pages, r.chars, r.durationMillis); }
+```
+
+`ExtractionException extends IOException`, so existing `catch (IOException)` callers keep working.
+
+### 8.5 Template-engine rendering
+
+```java
+FreemarkerPdfTemplate tpl = new FreemarkerPdfTemplate();   // one module per engine
+tpl.process("invoice.ftl", variables, new FileOutputStream("invoice.pdf"));
+```
 
 ## 9. Testing & Build
 
@@ -224,8 +270,8 @@ WordprocessingMLPackage doc = html.process(new File("page.html"));
 ./mvnw clean install       # install all modules into the local repository
 ```
 
-- Engine modules carry `WordprocessingML{Engine}Template_Test` / `WordprocessingMLTemplate_Test` test classes (freemarker, rythm, thymeleaf, jetbrick, webit, ...).
-- Coverage is measured with the JaCoCo Maven plugin (target: 90% line coverage, `haltOnFailure=false`).
+- `easypdf-xhtml` carries the conversion/extraction test suite (facade, structure model, chunker, summary builder, robustness cases).
+- Coverage is measured with the JaCoCo Maven plugin.
 - The `release` profile assembles GPG signing + sources + Javadoc + deployment (`./mvnw -Prelease clean deploy`).
 
 ## 10. Versioning & Branches
@@ -238,7 +284,7 @@ Three parallel version lines are maintained; the Java sources, comments and docs
 | `feature/2.0.x` | JDK 17 | `2.0.x.*` |
 | `feature/3.0.x` | JDK 21 | `3.0.x.*` |
 
-Maintenance strategy: the 1.0.x line receives bug fixes while JDK 8 remains the baseline; feature development primarily targets the 2.0.x / 3.0.x lines (see the docx4j version matrix above).
+Maintenance strategy: all lines track the pdf-only architecture; feature development primarily targets the 3.0.x line.
 
 ## 11. Contributing & License
 
@@ -247,5 +293,4 @@ Contributions are welcome — open an issue or submit a pull request against the
 This project is licensed under the [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0). See the `LICENSE` file in the repository root for details.
 
 References:
-- https://www.docx4java.org/
 - https://itextpdf.com/

@@ -1,6 +1,6 @@
 # easypdf R4-P2 生产加固计划（错误分级报告 + 安全护栏 + 文档）
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** 让提取引擎达到生产可运维标准：① 失败可分类（损坏/加密/超限）而非一律 IOException；② 提取附带 ExtractReport（页数/字符数/表格数/图片数/警告列表/耗时），智能体与服务端可观测；③ 安全护栏（文件大小上限、页数上限，防恶意巨型 PDF DoS）；④ 文档真实化（README 更新为纯 PDF 库现状 + 新增 USAGE.md）。
 
@@ -32,7 +32,7 @@ public class ExtractionException extends java.io.IOException {
 }
 ```
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 ```java
 package io.github.easy4j.pdf.xhtml.convert;
 
@@ -56,7 +56,7 @@ class ExtractionExceptionTest {
     }
 }
 ```
-- [ ] Step 2 确认失败 → Step 3 实现 → Step 4 通过 → Step 5 Commit `feat(extract): add ExtractionException with error classification codes`
+- [x] Step 2 确认失败 → Step 3 实现 → Step 4 通过 → Step 5 Commit `feat(extract): add ExtractionException with error classification codes`
 
 ---
 
@@ -73,7 +73,7 @@ class ExtractionExceptionTest {
 3. `PdfReader` 构造失败且异常消息含 "password"/"encrypt"（不区分大小写）→ ENCRYPTED；其余 → CORRUPT
 4. `/nonexistent` 维持原 IOException("PDF not found") 不变（改为 NOT_FOUND 包装亦兼容——保持原文案）
 
-- [ ] **Step 1: 写失败测试**（3 个）：
+- [x] **Step 1: 写失败测试**（3 个）：
 ```java
 @Test void oversizedPdfRejected() // props.maxFileBytes=10，真实小 pdf → LIMIT_EXCEEDED
 @Test void passwordProtectedDetected(@TempDir File dir)
@@ -88,7 +88,7 @@ class ExtractionExceptionTest {
 @Test void corruptBytesMapToCorrupt()
     // 写入 "%PDF-1.4\n垃圾" 字节 → code==CORRUPT
 ```
-- [ ] Step 2 确认失败 → Step 3 实现（注意：加密 PDF 的读取失败发生在 `new ParsedDoc(pdf)` 内部 `new PdfReader(pdf)` 或首次 getNumberOfPages——在 extract 的 try 块 catch BadPasswordException / IOException 分诊）→ Step 4 回归全绿 → Step 5 Commit `feat(extract): size/page guards and classified extraction errors`
+- [x] Step 2 确认失败 → Step 3 实现（注意：加密 PDF 的读取失败发生在 `new ParsedDoc(pdf)` 内部 `new PdfReader(pdf)` 或首次 getNumberOfPages——在 extract 的 try 块 catch BadPasswordException / IOException 分诊）→ Step 4 回归全绿 → Step 5 Commit `feat(extract): size/page guards and classified extraction errors`
 
 ---
 
@@ -116,8 +116,8 @@ public static ExtractReport extractWithReport(File pdf, PdfExtractionProperties 
 ```
 语义：永不抛异常——成功填 document；失败填 error 并保留已统计的计数。warnings 至少包含：无文本层 PDF（"no text extracted"）。
 
-- [ ] **Step 1: 写失败测试**（3 个）：成功路径 fields 正确 + durationMillis ≥ 0；不存在文件 → success=false && error.code==NOT_FOUND；空文本 HTML 生成的 PDF → warning 含 "no text"
-- [ ] Step 2 确认失败 → Step 3 实现（内部调 extract，成功后从 document 统计 chars=遍历 sections.content.length、tables/images 尺寸）→ Step 4 回归 → Step 5 Commit `feat(extract): add ExtractReport and never-throw extractWithReport`
+- [x] **Step 1: 写失败测试**（3 个）：成功路径 fields 正确 + durationMillis ≥ 0；不存在文件 → success=false && error.code==NOT_FOUND；空文本 HTML 生成的 PDF → warning 含 "no text"
+- [x] Step 2 确认失败 → Step 3 实现（内部调 extract，成功后从 document 统计 chars=遍历 sections.content.length、tables/images 尺寸）→ Step 4 回归 → Step 5 Commit `feat(extract): add ExtractReport and never-throw extractWithReport`
 
 ---
 
@@ -133,13 +133,13 @@ public static ExtractReport extractWithReport(File pdf, PdfExtractionProperties 
 - Agent API 示例（summary → pageRange → chunked 全链路）
 - 配置项表（PdfExtractionProperties 全字段）
 
-- [ ] Step 1 撰写并自查代码片段与实际签名一致 → Step 2 Commit `docs: rewrite README for pdf-only architecture and add USAGE guide`
+- [x] Step 1 撰写并自查代码片段与实际签名一致 → Step 2 Commit `docs: rewrite README for pdf-only architecture and add USAGE guide`
 
 ---
 
 ### Task 5: 三分支同步 + 推送 + 勾选
 
-- [ ] Step 1: 3.0.x 全量 verify → Step 2 同步 1.0.x（convert/ 新文件 + Properties + README/docs）→ verify → commit → Step 3 同步 2.0.x 同流程 → Step 4 push 三分支 → Step 5 勾选本计划 + 清理工作区
+- [x] Step 1: 3.0.x 全量 verify → Step 2 同步 1.0.x（convert/ 新文件 + Properties + README/docs）→ verify → commit → Step 3 同步 2.0.x 同流程 → Step 4 push 三分支 → Step 5 勾选本计划 + 清理工作区
 
 ---
 

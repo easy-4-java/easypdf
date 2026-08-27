@@ -52,3 +52,19 @@ jobs:
           name: surefire-reports
           path: target/surefire-reports
           retention-days: 14
+
+      - name: Upload failsafe (integration test) reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: failsafe-reports
+          path: '**/target/failsafe-reports'
+          retention-days: 14
+
+      - name: Upload CycloneDX SBOM
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: cyclonedx-sbom
+          path: '**/target/bom.json'
+          retention-days: 14

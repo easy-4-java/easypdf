@@ -116,4 +116,23 @@ class StructureDetectTest {
             assertThat(md).contains("print(add(1, 2))");
         }
     }
+
+    // ---------------- W2-3 题注识别 ----------------
+
+    @Test
+    void figureAndTableCaptionsItalicized() throws Exception {
+        List<PageModel> pages = renderPages(
+            "<html><body><p>正文段落第一行。</p>"
+            + "<p style='font-size:9px'>Figure 1: system overview</p>"
+            + "<p style='font-size:9px'>图 1 系统架构示意</p>"
+            + "<p style='font-size:9px'>Table 2: key metrics</p>"
+            + "<p>正文段落第二行。</p></body></html>");
+        DocumentStructure ds = new RuleLayoutAnalyzer().analyze(pages, Collections.<int[]>emptyList(), "t");
+        String md = ds.fullMarkdown();
+        assertThat(md).containsPattern("(?m)^\\*Figure 1: system overview\\*$");
+        assertThat(md).containsPattern("(?m)^\\*图 1 系统架构示意\\*$");
+        assertThat(md).containsPattern("(?m)^\\*Table 2: key metrics\\*$");
+        // 正文字号（≥ 正文阈值）的同形文本不判题注
+        assertThat(md).doesNotContain("*正文段落第一行。*");
+    }
 }

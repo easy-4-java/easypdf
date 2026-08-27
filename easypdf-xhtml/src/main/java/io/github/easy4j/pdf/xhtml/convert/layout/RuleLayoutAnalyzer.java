@@ -23,6 +23,8 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
 
     private static final Pattern UNORDERED = Pattern.compile("^[•·◦‣○▪o\\-]\\s*");
     private static final Pattern ORDERED = Pattern.compile("^(\\d{1,2}|[a-z]|[ivxIVX]{1,4})[.)、]\\s*");
+    /** 题注：图/表/Figure/Table/Fig. + 编号（字号 ≤ 正文时判为题注）。 */
+    private static final Pattern CAPTION = Pattern.compile("^(图|表|Figure|Table|Fig\\.?)\\s*\\d+");
     private static final float COLUMN_GAP = 55f;
 
     /** 字号量化到 0.5pt 桶，消除渲染浮点噪声（11.2 vs 11.4 等）。 */
@@ -128,6 +130,12 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
                 }
                 body.append("```\n");
                 i += codeLen;
+                continue;
+            }
+            // 题注：图/表/Figure/Table 编号行且字号不大于正文 → 斜体单独成段
+            if (ln.size <= bodySize + 0.5f && CAPTION.matcher(text).find()) {
+                body.append('*').append(text).append("*\n");
+                i++;
                 continue;
             }
 

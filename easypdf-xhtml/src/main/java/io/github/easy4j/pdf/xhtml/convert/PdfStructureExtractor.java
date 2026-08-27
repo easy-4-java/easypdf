@@ -138,7 +138,7 @@ public final class PdfStructureExtractor {
         }
         if (StandardRoles.L.equals(role)) {
             StringBuilder sb = new StringBuilder();
-            readList(elem, sb, ctx);
+            readList(elem, 0, sb, ctx);
             String list = sb.toString().trim();
             if (!list.isEmpty()) {
                 appendToCurrent(parent, doc, list);
@@ -294,19 +294,60 @@ public final class PdfStructureExtractor {
         return sb.toString();
     }
 
-    private static void readList(PdfStructElem list, StringBuilder out, Ctx ctx) {
+    private static void readList(PdfStructElem list, int level, StringBuilder out, Ctx ctx) {
         if (list.getKids() == null) return;
         for (IStructureNode child : list.getKids()) {
             if (!(child instanceof PdfStructElem)) continue;
             PdfStructElem e = (PdfStructElem) child;
             String r = normRole(e);
             if (StandardRoles.LI.equals(r)) {
-                String text = textOf(e, ctx).trim().replaceFirst("^[•·‣\\-]\\s*", "");
+                // 仅取 LI 自身标签文本（跳过嵌套 L 子树，避免拍平进同一行）
+                StringBuilder own = new StringBuilder();
+                collectTextSkipLists(e, ctx, own);
+                String text = own.toString().trim().replaceFirst("^[•·‣◦○▪\\-]\\s*", "");
                 if (!text.isEmpty()) {
+                    for (int i = 0; i < level; i++) {
+                        out.append("  "); // 2 空格/级
+                    }
                     out.append("- ").append(text).append('\n');
                 }
+                // 嵌套列表通常挂在 LI 的容器（LBody）下：穿透容器收集首层嵌套 L
+                expandNestedLists(e, level, out, ctx);
             } else if (StandardRoles.L.equals(r)) {
-                readList(e, out, ctx); // 嵌套列表拍平
+                readList(e, level + 1, out, ctx); // 直接挂在 L 下的嵌套列表
+            }
+        }
+    }
+
+    /** 同 {@link #collectText}，但跳过嵌套 List 子树（由 readList 的递归层展开）。 */
+    private static void collectTextSkipLists(PdfStructElem elem, Ctx ctx, StringBuilder out) {
+        if (elem.getKids() == null) return;
+        for (IStructureNode child : elem.getKids()) {
+            if (child instanceof PdfMcr) {
+                PdfMcr mcr = (PdfMcr) child;
+                Integer page = ctx.pageNums.get(mcr.getPageObject());
+                if (page == null) continue;
+                StringBuilder sb = ctx.idx.get(page.intValue() + ":" + mcr.getMcid());
+                if (sb != null) out.append(sb);
+            } else if (child instanceof PdfStructElem) {
+                PdfStructElem ce = (PdfStructElem) child;
+                if (StandardRoles.L.equals(normRole(ce))) continue;
+                collectTextSkipLists(ce, ctx, out);
+            }
+        }
+    }
+
+    /** 在 LI 子树内收集首层嵌套 L 并以 level+1 缩进展开（穿透 LBody/Div 等容器，不进入更深 LI/L）。 */
+    private static void expandNestedLists(PdfStructElem node, int level, StringBuilder out, Ctx ctx) {
+        if (node.getKids() == null) return;
+        for (IStructureNode k : node.getKids()) {
+            if (!(k instanceof PdfStructElem)) continue;
+            PdfStructElem ke = (PdfStructElem) k;
+            String kr = normRole(ke);
+            if (StandardRoles.L.equals(kr)) {
+                readList(ke, level + 1, out, ctx);
+            } else if (!StandardRoles.LI.equals(kr)) {
+                expandNestedLists(ke, level, out, ctx);
             }
         }
     }

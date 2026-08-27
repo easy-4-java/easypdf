@@ -21,7 +21,7 @@ import io.github.easy4j.pdf.xhtml.convert.DocumentTable;
  */
 public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
 
-    private static final Pattern UNORDERED = Pattern.compile("^[•·◦‣\\-]\\s*");
+    private static final Pattern UNORDERED = Pattern.compile("^[•·◦‣○▪o\\-]\\s*");
     private static final Pattern ORDERED = Pattern.compile("^(\\d{1,2}|[a-z]|[ivxIVX]{1,4})[.)、]\\s*");
     private static final float COLUMN_GAP = 55f;
 
@@ -103,6 +103,7 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
         StringBuilder body = new StringBuilder();
 
         boolean currentIsHeading = false;
+        List<Float> listLevelXs = new ArrayList<Float>(); // 各层级列表行 x 起点（末位=当前最深级）
         int i = 0;
         while (i < allLines.size()) {
             // 流式表格尝试（连续 ≥3 行、≥2 列 x 对齐）
@@ -136,14 +137,20 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
                 current.title = text;
                 current.level = headingLevel(allLines, i, bodySize);
                 currentIsHeading = true;
+                listLevelXs.clear();
                 // 延迟入列：由下一次 flush 或循环末尾统一 add，避免标题段整段重复
                 i++;
                 continue;
             }
             String lst = listMarker(text);
             if (lst != null) {
+                int lvl = nestedListLevel(listLevelXs, ln.x);
+                for (int s = 0; s < lvl; s++) {
+                    body.append("  "); // 2 空格/级
+                }
                 body.append(lst).append(text.substring(markerLen(text))).append('\n');
             } else {
+                listLevelXs.clear(); // 普通段落打断列表层级上下文
                 body.append(text).append('\n');
             }
             i++;
@@ -398,6 +405,26 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
         m = ORDERED.matcher(text);
         if (m.find()) return m.end();
         return 0;
+    }
+
+    /**
+     * 嵌套列表层级推断（维护各层级 x 起点，返回该行应处的层级下标）：
+     * 行 x 起点 ≥ 当前级起点 +12pt → 下钻子级；明显左移（>6pt）→ 回退上级；同级容差内沿用。
+     */
+    private static int nestedListLevel(List<Float> levelXs, float x) {
+        while (!levelXs.isEmpty() && x < levelXs.get(levelXs.size() - 1).floatValue() - 6f) {
+            levelXs.remove(levelXs.size() - 1);
+        }
+        if (levelXs.isEmpty()) {
+            levelXs.add(Float.valueOf(x));
+            return 0;
+        }
+        float top = levelXs.get(levelXs.size() - 1).floatValue();
+        if (x >= top + 12f) {
+            levelXs.add(Float.valueOf(x));
+            return levelXs.size() - 1;
+        }
+        return levelXs.size() - 1;
     }
 
     // ---------------- 流式表格（无格线，x 对齐） ----------------

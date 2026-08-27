@@ -101,6 +101,86 @@ public final class PdfStructureExtractor {
             "Failed to parse PDF (may be corrupted): " + msg, cause);
     }
 
+    // ---------------- 报告式提取（永不抛异常） ----------------
+
+    /**
+     * 报告式提取：内部走 {@link #extract(File, PdfExtractionProperties)}，
+     * 但任何失败都被折叠进 {@link ExtractReport#error} 而不向调用方抛出——
+     * 智能体与服务端按字段读取结果即可，无需 try/catch。
+     *
+     * <p>成功后从 document 统计：chars（遍历 sections 含子级的 content 长度）、
+     * tables/images 尺寸（文档级 + section 内递归）、pages（section 页锚点最大值，
+     * 整篇 Tagged 路径锚点缺省 0 时下限记 1）；无文本层（chars==0）时在
+     * warnings 追加 "no text extracted"（提取本身不算失败）。失败时保留已统计计数。
+     */
+    public static ExtractReport extractWithReport(File pdf, PdfExtractionProperties props) {
+        long start = System.currentTimeMillis();
+        ExtractReport r = new ExtractReport();
+        try {
+            DocumentStructure doc = extract(pdf, props);
+            r.success = true;
+            r.document = doc;
+            Stats st = new Stats();
+            collectStats(doc, st);
+            r.chars = st.chars;
+            r.tables = st.tables;
+            r.images = st.images;
+            r.pages = Math.max(st.maxPage, 1); // 页锚点未知时至少记 1 页
+            if (st.chars == 0) {
+                r.warnings.add("no text extracted");
+            }
+        } catch (Throwable t) { // 故意吞 Throwable：报告式入口承诺绝不抛出（含 iText 运行时异常/Error）
+            r.success = false;
+            r.document = null;
+            r.error = t instanceof ExtractionException
+                    ? (ExtractionException) t
+                    : new ExtractionException(ExtractionException.Code.CORRUPT,
+                        "PDF extraction failed (" + t.getClass().getSimpleName() + "): " + t.getMessage(), t);
+        }
+        r.durationMillis = System.currentTimeMillis() - start;
+        return r;
+    }
+
+    /** 统计累计器：chars/tables/images 与最大页锚点（pages 推断用）。 */
+    private static final class Stats {
+        long chars;
+        long tables;
+        long images;
+        int maxPage;
+    }
+
+    private static void collectStats(DocumentStructure doc, Stats st) {
+        if (doc == null) {
+            return;
+        }
+        st.tables += doc.tables == null ? 0 : doc.tables.size();
+        st.images += doc.images == null ? 0 : doc.images.size();
+        if (doc.sections != null) {
+            for (DocumentSection s : doc.sections) {
+                collectStats(s, st);
+            }
+        }
+    }
+
+    private static void collectStats(DocumentSection sec, Stats st) {
+        if (sec == null) {
+            return;
+        }
+        if (sec.content != null) {
+            st.chars += sec.content.length();
+        }
+        if (sec.page > st.maxPage) {
+            st.maxPage = sec.page;
+        }
+        st.tables += sec.tables == null ? 0 : sec.tables.size();
+        st.images += sec.images == null ? 0 : sec.images.size();
+        if (sec.children != null) {
+            for (DocumentSection c : sec.children) {
+                collectStats(c, st);
+            }
+        }
+    }
+
     // ---------------- 页级流式提取（大文件不再全量驻留） ----------------
 
     /** 每页回调一次：pageNo 从 1 起；REST 引擎产出整篇结果时以 pageNo=0 单次回调。 */

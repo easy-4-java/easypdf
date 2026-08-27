@@ -1,6 +1,6 @@
 # easypdf R5-Hotfix 计划（A4 DoS 软护栏前置拦截）
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** 把 R4-P2 加的 maxFileBytes/maxPages 校验从"打开后"前置到"读取前"——目前恶意巨型 PDF 仍付出一次 IO + 解析成本后才被拒绝，前置拦截让 size 护栏真正生效。
 
@@ -33,7 +33,7 @@
 2. 超限抛 `ExtractionException(LIMIT_EXCEEDED, "PDF too large: X bytes > maxFileBytes Y")`（Y=0 时表示不限——参见下面边界）
 3. `≤0` 视为不限制（兼容旧调用方 properties 未设置场景）
 
-- [ ] **Step 1: 写失败测试**（在 RobustnessTest 或 ExtractionExceptionTest 末尾追加）
+- [x] **Step 1: 写失败测试**（在 RobustnessTest 或 ExtractionExceptionTest 末尾追加）
 
 ```java
 @Test
@@ -48,8 +48,8 @@ void oversizedPdfRejectedBeforeParsing(@TempDir File dir) throws Exception {
             .isEqualTo(ExtractionException.Code.LIMIT_EXCEEDED);
 }
 ```
-- [ ] **Step 2: 确认失败**——运行 `~/tools/apache-maven-4.0.0-rc-6/bin/mvn -B -ntp -pl easypdf-xhtml -am test -Dtest=ExtractionExceptionTest -Dsurefire.failIfNoSpecifiedTests=false 2>&1 | grep -E "Tests run|FAIL"`
-- [ ] **Step 3: 在 extract(File, PdfExtractionProperties) 加**：
+- [x] **Step 2: 确认失败**——运行 `~/tools/apache-maven-4.0.0-rc-6/bin/mvn -B -ntp -pl easypdf-xhtml -am test -Dtest=ExtractionExceptionTest -Dsurefire.failIfNoSpecifiedTests=false 2>&1 | grep -E "Tests run|FAIL"`
+- [x] **Step 3: 在 extract(File, PdfExtractionProperties) 加**：
 
 ```java
 // 文件大小前置校验（在 null + 文件存在性之后、ParsedDoc 构造之前）
@@ -62,18 +62,18 @@ if (props.maxFileBytes > 0) {
 }
 ```
 （需 import `java.nio.file.Files` 与 `io.github.easy4j.pdf.xhtml.convert.ExtractionException`——前者应已在 R4-P2 引入；后者 import 一次即可）
-- [ ] **Step 4: 模块回归 `clean verify` 全绿**——既有 144 tests 不得破坏（含 `/nonexistent` IOException 文案、passwordProtected ENCRYPTED 等）
-- [ ] **Step 5: Commit** `fix(extract): check maxFileBytes before parsing pdf`
+- [x] **Step 4: 模块回归 `clean verify` 全绿**——既有 144 tests 不得破坏（含 `/nonexistent` IOException 文案、passwordProtected ENCRYPTED 等）
+- [x] **Step 5: Commit** `fix(extract): check maxFileBytes before parsing pdf`
 
 ---
 
 ### Task 2: 三分支同步 + 推送
 
-- [ ] Step 1: 3.0.x 全量 verify
-- [ ] Step 2: 同步 1.0.x（`easypdf-xhtml/src/main/java/io/github/easy4j/pdf/xhtml/convert/PdfStructureExtractor.java` + 测试文件）→ verify → commit → push
-- [ ] Step 3: 同步 2.0.x 同流程
-- [ ] Step 4: 勾选本计划 + commit + push
-- [ ] Step 5: 清理 worktree
+- [x] Step 1: 3.0.x 全量 verify
+- [x] Step 2: 同步 1.0.x（`easypdf-xhtml/src/main/java/io/github/easy4j/pdf/xhtml/convert/PdfStructureExtractor.java` + 测试文件）→ verify → commit → push
+- [x] Step 3: 同步 2.0.x 同流程
+- [x] Step 4: 勾选本计划 + commit + push
+- [x] Step 5: 清理 worktree
 
 ---
 

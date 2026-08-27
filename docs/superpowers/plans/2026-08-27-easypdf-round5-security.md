@@ -1,6 +1,6 @@
 # easypdf R5-Security 计划（嵌入式 JS / XXE / 路径遍历）
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** 收紧智能体场景下 PDF 输入面：① 显式禁用 iText 嵌入式 JS 执行（最严重 RCE 面）；② 加固嵌套资源/XML 解析深度（防 XXE/zip bomb）；③ `EasyPdf` 入口加 canonical 路径校验 + 日志转义（防路径遍历/日志注入）。
 
@@ -31,7 +31,7 @@
 2. 在每处构造后立即 `reader.setIgnoreJavaScript(true)`
 3. 测试夹具生成含 `/JS` 字典的 PDF：iText 提供 `writer.addJavaScript("print('hello')")` 后 `getAcroFields()` 路径或 js 路径不再触发
 
-- [ ] **Step 1: 写失败测试**（RobustnessTest 末尾）
+- [x] **Step 1: 写失败测试**（RobustnessTest 末尾）
 
 ```java
 @Test
@@ -52,7 +52,7 @@ void pdfWithEmbeddedJavaScriptIgnored(@TempDir File dir) throws Exception {
 ```
 > **实施注意**：iText 的 `setIgnoreJavaScript(boolean)` 是公共方法。验证方式——直接断言提取成功即可（副作用：JS 路径被忽略）。
 
-- [ ] Step 2 确认失败 → Step 3 修改 extractor 两处 `new PdfReader` 之后立即 `reader.setIgnoreJavaScript(true);` → Step 4 回归 → Step 5 Commit `fix(extract): ignore pdf embedded javascript before parsing`
+- [x] Step 2 确认失败 → Step 3 修改 extractor 两处 `new PdfReader` 之后立即 `reader.setIgnoreJavaScript(true);` → Step 4 回归 → Step 5 Commit `fix(extract): ignore pdf embedded javascript before parsing`
 
 ---
 
@@ -68,7 +68,7 @@ void pdfWithEmbeddedJavaScriptIgnored(@TempDir File dir) throws Exception {
 3. 对真实 XXE 面：iText 解析 XMP 时 saxon 链不接外部实体——已较安全；本 Task 仅加固**深结构 DoS**：`reader.setMemoryCapSize(...)`（如可用）+ `new PDFStreamProcessor().processPageContent(...)` 不变（已在 PageModelListener 使用）
 4. 实测 50 层嵌套 PDF 触发 1K-10K chars 文本提取的时间——若超 5s（智能体上下文等待不可接受），加 `pdfDoc.setPageProcessorTimeout`（iText 7.1.10 是否有此 API：javap 验证）；无则跳过此 Task
 
-- [ ] **Step 1: 写失败测试**（RobustnessTest 末尾，超大嵌套或元数据炸弹）
+- [x] **Step 1: 写失败测试**（RobustnessTest 末尾，超大嵌套或元数据炸弹）
 
 ```java
 @Test
@@ -94,9 +94,9 @@ void deeplyNestedPdfDoesNotHang(@TempDir File dir) throws Exception {
 }
 ```
 
-- [ ] Step 2 跑测试观察是否真正慢（>5s），若不快则**本 Task 无新增代码**——直接关闭并清理 Task 2 为非阻塞
-- [ ] Step 3（仅必要时）— 找到深度限制 API（javap）并接入
-- [ ] Step 4 回归 + Step 5 Commit（无变更时仅文档化结论："javap 验证后无显式深度 API；iText 7.1.10 单 chunk 解析栈深度由 JVM 控制——已实测 4KB/5000 字符 < 5s 解析完成"）
+- [x] Step 2 跑测试观察是否真正慢（>5s），若不快则**本 Task 无新增代码**——直接关闭并清理 Task 2 为非阻塞
+- [x] Step 3（仅必要时）— 找到深度限制 API（javap）并接入
+- [x] Step 4 回归 + Step 5 Commit（无变更时仅文档化结论："javap 验证后无显式深度 API；iText 7.1.10 单 chunk 解析栈深度由 JVM 控制——已实测 4KB/5000 字符 < 5s 解析完成"）
 
 ---
 
@@ -113,7 +113,7 @@ void deeplyNestedPdfDoesNotHang(@TempDir File dir) throws Exception {
 2. 所有 public 静态方法入口调用此方法
 3. 日志转义（最小补丁）：抽取 `private static String escape(String s)` —— `s.replace("\\", "\\\\").replace("\n","\\n").replace("\r","\\r")`；用于所有日志/异常消息
 
-- [ ] **Step 1: 写失败测试**（RobustnessTest）
+- [x] **Step 1: 写失败测试**（RobustnessTest）
 
 ```java
 @Test
@@ -140,13 +140,13 @@ void escapeHandlesControlChars() {
 ```
 > **修改方案**：将 `escape` 改为 `package-private static`，同包测试可达。
 
-- [ ] Step 2 确认失败 → Step 3 修改 EasyPdf + 加 `escapeForLog` → Step 4 回归 → Step 5 Commit `fix(extract): add canonical-file gate and log-safe escape`
+- [x] Step 2 确认失败 → Step 3 修改 EasyPdf + 加 `escapeForLog` → Step 4 回归 → Step 5 Commit `fix(extract): add canonical-file gate and log-safe escape`
 
 ---
 
 ### Task 4: 三分支同步 + 推送
 
-- [ ] Step 1: 3.0.x verify → Step 2 同步 1.0.x/2.0.x → Step 3 push → Step 4 勾选 + commit
+- [x] Step 1: 3.0.x verify → Step 2 同步 1.0.x/2.0.x → Step 3 push → Step 4 勾选 + commit
 
 ---
 

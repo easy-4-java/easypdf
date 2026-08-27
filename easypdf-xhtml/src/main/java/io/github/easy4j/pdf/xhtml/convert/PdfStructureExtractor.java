@@ -10,8 +10,10 @@ import java.util.Map;
 import java.util.Objects;
 
 import com.itextpdf.kernel.PdfException;
+import com.itextpdf.kernel.pdf.PdfCatalog;
 import com.itextpdf.kernel.pdf.PdfDictionary;
 import com.itextpdf.kernel.pdf.PdfDocument;
+import com.itextpdf.kernel.pdf.PdfName;
 import com.itextpdf.kernel.pdf.PdfReader;
 import com.itextpdf.kernel.pdf.canvas.parser.PdfTextExtractor;
 import com.itextpdf.kernel.pdf.tagging.IStructureNode;
@@ -373,6 +375,7 @@ public final class PdfStructureExtractor {
         ParsedDoc(File pdf) throws IOException {
             this.source = pdf;
             this.pdfDoc = new PdfDocument(new PdfReader(pdf));
+            stripEmbeddedJavaScript(this.pdfDoc);
             String metaTitle = pdfDoc.getDocumentInfo() != null ? pdfDoc.getDocumentInfo().getTitle() : null;
             this.title = (metaTitle == null || metaTitle.isEmpty()) ? pdf.getName() : metaTitle;
             this.models = PageModelListener.collect(pdfDoc);
@@ -389,6 +392,29 @@ public final class PdfStructureExtractor {
         @Override
         public void close() throws IOException {
             pdfDoc.close();
+        }
+
+        /**
+         * 纵深防御：打开后立即剥离 catalog 顶层的脚本向量（/JS、/JavaScript 与
+         * JavaScript 型 OpenAction）。iText 内核解析从不执行嵌入 JS（库内无解释器，
+         * 也无 setIgnoreJavaScript 开关——7.x/8.x API 均不存在），此剥离保证本
+         * 上下文以及任何下游复用（序列化/再转换）都不会把脚本带出去。
+         * 全部 reader 构造经由 ParsedDoc，extract 与 extractPerPage 两路径均被覆盖；
+         * 缓存命中分支不打开文件、无 reader，无需处理。
+         */
+        private static void stripEmbeddedJavaScript(PdfDocument doc) {
+            PdfCatalog cat = doc.getCatalog();
+            if (cat == null || cat.getPdfObject() == null) {
+                return;
+            }
+            // PdfCatalog 是 PdfObjectWrapper 包装而非字典本身：经 getPdfObject 操作条目
+            PdfDictionary root = cat.getPdfObject();
+            root.remove(PdfName.JS);
+            root.remove(PdfName.JavaScript);
+            PdfDictionary oa = root.getAsDictionary(PdfName.OpenAction);
+            if (oa != null && PdfName.JavaScript.equals(oa.get(PdfName.S))) {
+                root.remove(PdfName.OpenAction); // 仅摘除 JS 型动作，保留普通页面定位
+            }
         }
     }
 

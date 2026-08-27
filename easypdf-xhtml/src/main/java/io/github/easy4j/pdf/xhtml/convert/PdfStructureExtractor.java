@@ -44,8 +44,30 @@ public final class PdfStructureExtractor {
         return extract(pdf, PdfExtractionProperties.defaults());
     }
 
+    /**
+     * 结构化提取（带进程级计数）：成功与失败各计一次进 {@link ExtractorMetrics#INSTANCE}。
+     * 本方法是全部提取路径的单一收口（报告式 {@link #extractWithReport} 也委托至此），
+     * 因此不会重复计数；耗时用 System.currentTimeMillis() 测量。未分级的
+     * IOException / 运行时异常按 CORRUPT 归类，与报告式入口的兜底口径一致。
+     */
     public static DocumentStructure extract(File pdf, PdfExtractionProperties props) throws IOException {
         Objects.requireNonNull(pdf, "pdf must not be null");
+        long start = System.currentTimeMillis();
+        try {
+            DocumentStructure doc = doExtract(pdf, props);
+            ExtractorMetrics.INSTANCE.recordSuccess(System.currentTimeMillis() - start);
+            return doc;
+        } catch (IOException | RuntimeException e) {
+            ExtractionException.Code code = e instanceof ExtractionException
+                    ? ((ExtractionException) e).getCode()
+                    : ExtractionException.Code.CORRUPT;
+            ExtractorMetrics.INSTANCE.recordFailure(code, System.currentTimeMillis() - start);
+            throw e;
+        }
+    }
+
+    /** 提取主体：原 extract(File, props) 逻辑，不含计数。 */
+    private static DocumentStructure doExtract(File pdf, PdfExtractionProperties props) throws IOException {
         LOG.debug("extract requested file={}", pdf.getName());
         if (!pdf.isFile()) {
             // NOT_FOUND 分级包装；文案与历史行为一致（仍为 IOException 子类）

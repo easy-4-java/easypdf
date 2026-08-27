@@ -67,7 +67,10 @@ public final class PdfStructureExtractor {
 
     /** 每页回调一次：pageNo 从 1 起；REST 引擎产出整篇结果时以 pageNo=0 单次回调。 */
     public interface PageConsumer {
-        void page(int pageNo, DocumentStructure pagePartial);
+        /**
+         * @return true 继续消费后续页；false 中断流式提取（后续页不再回调）。
+         */
+        boolean page(int pageNo, DocumentStructure pagePartial);
     }
 
     /**
@@ -77,6 +80,8 @@ public final class PdfStructureExtractor {
      * <p>每页独立分析（无跨页统计），因此页眉剔除、跨页断词合并与全局字号聚类
      * 不适用；需要全局语义时使用 {@link #extract(File, PdfExtractionProperties)}。
      * 聚合可借助包级方法 {@link #aggregate(List)}（把后续页的隐式继承段并入上一节）。
+     * 各页 partial 内 section（含子级）的 {@code page} 字段在回调前写入当页号，
+     * REST 整篇回调（pageNo=0）的 section.page 保持缺省 0。
      */
     public static void extractPerPage(File pdf, PdfExtractionProperties props, PageConsumer consumer)
             throws IOException {
@@ -110,8 +115,11 @@ public final class PdfStructureExtractor {
             }
             RuleLayoutAnalyzer analyzer = new RuleLayoutAnalyzer(props);
             for (PageModel m : pd.models) {
-                consumer.page(m.pageNo,
-                        analyzer.analyze(Collections.singletonList(m), null, pd.title));
+                DocumentStructure part = analyzer.analyze(Collections.singletonList(m), null, pd.title);
+                markSections(part.sections, m.pageNo);
+                if (!consumer.page(m.pageNo, part)) {
+                    break;
+                }
             }
         }
     }
@@ -129,7 +137,25 @@ public final class PdfStructureExtractor {
             for (IStructureNode child : kids) {
                 walk(child, null, part, ctx);
             }
-            consumer.page(p, part);
+            markSections(part.sections, p);
+            if (!consumer.page(p, part)) {
+                break;
+            }
+        }
+    }
+
+    /**
+     * 把当页号写入该 partial 的各层 section（children 递归），供切片器锚定
+     * {@link DocumentChunk} 的 pageStart/pageEnd；REST 整篇结果页号未知
+     * （回调约定 0），section.page 保持缺省 0。
+     */
+    private static void markSections(List<DocumentSection> secs, int pageNo) {
+        if (secs == null) {
+            return;
+        }
+        for (DocumentSection s : secs) {
+            s.page = pageNo;
+            markSections(s.children, pageNo);
         }
     }
 

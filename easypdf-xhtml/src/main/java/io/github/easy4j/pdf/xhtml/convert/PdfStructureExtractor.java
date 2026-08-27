@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import com.itextpdf.kernel.PdfException;
 import com.itextpdf.kernel.pdf.PdfDictionary;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfReader;
@@ -42,9 +43,16 @@ public final class PdfStructureExtractor {
     public static DocumentStructure extract(File pdf, PdfExtractionProperties props) throws IOException {
         Objects.requireNonNull(pdf, "pdf must not be null");
         if (!pdf.isFile()) {
-            throw new IOException("PDF not found: " + pdf.getAbsolutePath());
+            // NOT_FOUND 分级包装；文案与历史行为一致（仍为 IOException 子类）
+            throw new ExtractionException(ExtractionException.Code.NOT_FOUND,
+                "PDF not found: " + pdf.getAbsolutePath());
         }
         PdfExtractionProperties p = props != null ? props : PdfExtractionProperties.defaults();
+        // 护栏：文件大小上限在读取前拦截（防恶意巨型 PDF DoS）
+        if (p.maxFileBytes > 0 && pdf.length() > p.maxFileBytes) {
+            throw new ExtractionException(ExtractionException.Code.LIMIT_EXCEEDED,
+                "PDF size " + pdf.length() + " bytes exceeds maxFileBytes=" + p.maxFileBytes);
+        }
         String cacheKey = null;
         if (p.cacheEnabled) {
             // LRU 缓存（默认关）：key 绑定路径+修改时间+长度，文件变化自然失效
@@ -54,12 +62,122 @@ public final class PdfStructureExtractor {
                 return hit;
             }
         }
-        try (ParsedDoc pd = new ParsedDoc(pdf)) {
+        try (ParsedDoc pd = openClassified(pdf)) {
+            // 护栏：页数上限在打开后立刻检查
+            int pages = pd.pdfDoc.getNumberOfPages();
+            if (p.maxPages > 0 && pages > p.maxPages) {
+                throw new ExtractionException(ExtractionException.Code.LIMIT_EXCEEDED,
+                    "PDF page count " + pages + " exceeds maxPages=" + p.maxPages);
+            }
             DocumentStructure doc = extractAll(pd, p);
             if (cacheKey != null) {
                 ExtractCache.shared().put(cacheKey, doc);
             }
             return doc;
+        }
+    }
+
+    /** 打开并解析：构造期失败按底层消息分级映射为 ENCRYPTED/CORRUPT，不再裸抛。 */
+    private static ParsedDoc openClassified(File pdf) throws IOException {
+        try {
+            return new ParsedDoc(pdf);
+        } catch (IOException e) {
+            throw classifyOpenFailure(e);
+        } catch (PdfException e) {
+            // BadPasswordException 等属于 iText 的运行时异常，同样按消息分诊
+            throw classifyOpenFailure(e);
+        }
+    }
+
+    /** 消息含 password/encrypt（不区分大小写）判定为加密，其余解析失败归为损坏。 */
+    private static ExtractionException classifyOpenFailure(Throwable cause) {
+        String msg = cause.getMessage() == null ? "" : cause.getMessage();
+        String lower = msg.toLowerCase(java.util.Locale.ROOT);
+        if (lower.contains("password") || lower.contains("encrypt")) {
+            return new ExtractionException(ExtractionException.Code.ENCRYPTED,
+                "PDF is encrypted or password protected: " + msg, cause);
+        }
+        return new ExtractionException(ExtractionException.Code.CORRUPT,
+            "Failed to parse PDF (may be corrupted): " + msg, cause);
+    }
+
+    // ---------------- 报告式提取（永不抛异常） ----------------
+
+    /**
+     * 报告式提取：内部走 {@link #extract(File, PdfExtractionProperties)}，
+     * 但任何失败都被折叠进 {@link ExtractReport#error} 而不向调用方抛出——
+     * 智能体与服务端按字段读取结果即可，无需 try/catch。
+     *
+     * <p>成功后从 document 统计：chars（遍历 sections 含子级的 content 长度）、
+     * tables/images 尺寸（文档级 + section 内递归）、pages（section 页锚点最大值，
+     * 整篇 Tagged 路径锚点缺省 0 时下限记 1）；无文本层（chars==0）时在
+     * warnings 追加 "no text extracted"（提取本身不算失败）。失败时保留已统计计数。
+     */
+    public static ExtractReport extractWithReport(File pdf, PdfExtractionProperties props) {
+        long start = System.currentTimeMillis();
+        ExtractReport r = new ExtractReport();
+        try {
+            DocumentStructure doc = extract(pdf, props);
+            r.success = true;
+            r.document = doc;
+            Stats st = new Stats();
+            collectStats(doc, st);
+            r.chars = st.chars;
+            r.tables = st.tables;
+            r.images = st.images;
+            r.pages = Math.max(st.maxPage, 1); // 页锚点未知时至少记 1 页
+            if (st.chars == 0) {
+                r.warnings.add("no text extracted");
+            }
+        } catch (Throwable t) { // 故意吞 Throwable：报告式入口承诺绝不抛出（含 iText 运行时异常/Error）
+            r.success = false;
+            r.document = null;
+            r.error = t instanceof ExtractionException
+                    ? (ExtractionException) t
+                    : new ExtractionException(ExtractionException.Code.CORRUPT,
+                        "PDF extraction failed (" + t.getClass().getSimpleName() + "): " + t.getMessage(), t);
+        }
+        r.durationMillis = System.currentTimeMillis() - start;
+        return r;
+    }
+
+    /** 统计累计器：chars/tables/images 与最大页锚点（pages 推断用）。 */
+    private static final class Stats {
+        long chars;
+        long tables;
+        long images;
+        int maxPage;
+    }
+
+    private static void collectStats(DocumentStructure doc, Stats st) {
+        if (doc == null) {
+            return;
+        }
+        st.tables += doc.tables == null ? 0 : doc.tables.size();
+        st.images += doc.images == null ? 0 : doc.images.size();
+        if (doc.sections != null) {
+            for (DocumentSection s : doc.sections) {
+                collectStats(s, st);
+            }
+        }
+    }
+
+    private static void collectStats(DocumentSection sec, Stats st) {
+        if (sec == null) {
+            return;
+        }
+        if (sec.content != null) {
+            st.chars += sec.content.length();
+        }
+        if (sec.page > st.maxPage) {
+            st.maxPage = sec.page;
+        }
+        st.tables += sec.tables == null ? 0 : sec.tables.size();
+        st.images += sec.images == null ? 0 : sec.images.size();
+        if (sec.children != null) {
+            for (DocumentSection c : sec.children) {
+                collectStats(c, st);
+            }
         }
     }
 

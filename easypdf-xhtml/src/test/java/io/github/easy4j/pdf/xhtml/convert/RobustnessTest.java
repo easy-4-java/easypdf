@@ -4,12 +4,19 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+
+import com.itextpdf.html2pdf.HtmlConverter;
+import com.itextpdf.kernel.pdf.EncryptionConstants;
+import com.itextpdf.kernel.pdf.PdfDocument;
+import com.itextpdf.kernel.pdf.PdfWriter;
+import com.itextpdf.kernel.pdf.WriterProperties;
 
 import io.github.easy4j.pdf.core.convert.HtmlPdfConverter;
 import io.github.easy4j.pdf.xhtml.convert.layout.ExtractCache;
@@ -358,5 +365,53 @@ class RobustnessTest {
             }
         });
         assertThat(seen).containsExactly(1, 2); // 第 3 页未回调
+    }
+
+    // ---------------- Round4-P2 Task 2: 安全护栏（maxFileBytes/maxPages）与错误分级 ----------------
+
+    @Test
+    void oversizedPdfRejected(@TempDir File dir) throws Exception {
+        File pdf = writePdf(dir, "tiny-but-over-limit.pdf",
+            "<html><body><p>超限护栏验证文本。</p></body></html>");
+        PdfExtractionProperties props = PdfExtractionProperties.defaults();
+        props.maxFileBytes = 10L;
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                () -> PdfStructureExtractor.extract(pdf, props))
+            .isInstanceOf(ExtractionException.class)
+            .isInstanceOfSatisfying(ExtractionException.class,
+                e -> assertThat(e.getCode()).isEqualTo(ExtractionException.Code.LIMIT_EXCEEDED));
+    }
+
+    @Test
+    void passwordProtectedDetected(@TempDir File dir) throws Exception {
+        // 用 iText 自身生成标准加密样本：user/owner 口令 + RC4-128 + 仅允许打印
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        WriterProperties wp = new WriterProperties().setStandardEncryption(
+            "user".getBytes(StandardCharsets.UTF_8),
+            "owner".getBytes(StandardCharsets.UTF_8),
+            EncryptionConstants.ALLOW_PRINTING,
+            EncryptionConstants.STANDARD_ENCRYPTION_128);
+        PdfDocument doc = new PdfDocument(new PdfWriter(out, wp));
+        HtmlConverter.convertToPdf("<html><body><p>加密样本文本。</p></body></html>", doc, null);
+        File pdf = new File(dir, "encrypted.pdf");
+        java.nio.file.Files.write(pdf.toPath(), out.toByteArray());
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> PdfStructureExtractor.extract(pdf))
+            .isInstanceOf(ExtractionException.class)
+            .isInstanceOfSatisfying(ExtractionException.class,
+                e -> assertThat(e.getCode()).isEqualTo(ExtractionException.Code.ENCRYPTED));
+    }
+
+    @Test
+    void corruptBytesMapToCorrupt(@TempDir File dir) throws Exception {
+        File pdf = new File(dir, "corrupt.pdf");
+        java.nio.file.Files.write(pdf.toPath(),
+            "%PDF-1.4\n垃圾字节流非合法PDF".getBytes(StandardCharsets.UTF_8));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> PdfStructureExtractor.extract(pdf))
+            .isInstanceOf(ExtractionException.class)
+            .isInstanceOfSatisfying(ExtractionException.class,
+                e -> assertThat(e.getCode()).isEqualTo(ExtractionException.Code.CORRUPT));
     }
 }

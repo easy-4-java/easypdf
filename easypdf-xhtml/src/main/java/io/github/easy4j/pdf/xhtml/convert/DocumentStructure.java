@@ -90,12 +90,12 @@ public final class DocumentStructure {
     private static void appendTable(StringBuilder sb, DocumentTable t) {
         if (t.headers == null || t.headers.isEmpty()) {
             for (List<String> row : t.rows) {
-                sb.append('|').append(joinCells(row)).append("|\n");
+                sb.append('|').append(joinCells(row)).append('\n');
             }
             return;
         }
         for (List<String> hdr : t.headers) {
-            sb.append('|').append(joinCells(hdr)).append("|\n");
+            sb.append('|').append(joinCells(hdr)).append('\n');
         }
         sb.append('|');
         for (int i = 0; i < t.headers.get(0).size(); i++) {
@@ -103,7 +103,7 @@ public final class DocumentStructure {
         }
         sb.append('\n');
         for (List<String> row : t.rows) {
-            sb.append('|').append(joinCells(row)).append("|\n");
+            sb.append('|').append(joinCells(row)).append('\n');
         }
         sb.append('\n');
     }

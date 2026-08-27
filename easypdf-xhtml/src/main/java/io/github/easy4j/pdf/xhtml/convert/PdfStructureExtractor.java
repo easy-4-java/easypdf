@@ -108,7 +108,7 @@ public final class PdfStructureExtractor {
                             .warn("REST layout analyzer failed, fallback to RULE: {}", e.getMessage());
                 }
             }
-            RuleLayoutAnalyzer analyzer = new RuleLayoutAnalyzer();
+            RuleLayoutAnalyzer analyzer = new RuleLayoutAnalyzer(props);
             for (PageModel m : pd.models) {
                 consumer.page(m.pageNo,
                         analyzer.analyze(Collections.singletonList(m), null, pd.title));
@@ -234,7 +234,7 @@ public final class PdfStructureExtractor {
                             .warn("REST layout analyzer failed, fallback to RULE: {}", e.getMessage());
                 }
             }
-            doc = new RuleLayoutAnalyzer().analyze(pd.models, null, doc.title);
+            doc = new RuleLayoutAnalyzer(props).analyze(pd.models, null, doc.title);
         }
         return doc;
     }

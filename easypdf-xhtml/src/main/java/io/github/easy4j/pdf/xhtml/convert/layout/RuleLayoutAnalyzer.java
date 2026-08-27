@@ -36,13 +36,19 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
     private final LatticeTableFinder tableFinder = new LatticeTableFinder();
     /** 中英文字间系数：净间隙 > 前字号 × 该系数 视为词间空格（见 PdfExtractionProperties.cjkGapFactor）。 */
     private final float cjkGapFactor;
+    private final PdfExtractionProperties props;
+    private final float columnGapPt;
+    private final float headFactor;
 
     public RuleLayoutAnalyzer() {
         this(PdfExtractionProperties.defaults());
     }
 
     public RuleLayoutAnalyzer(PdfExtractionProperties props) {
-        this.cjkGapFactor = props != null ? props.cjkGapFactor : 0.22f;
+        this.props = props != null ? props : PdfExtractionProperties.defaults();
+        this.cjkGapFactor = this.props.cjkGapFactor;
+        this.columnGapPt = (float) this.props.columnGapPt;
+        this.headFactor = (float) this.props.headFactor;
     }
 
     @Override
@@ -105,7 +111,7 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
 
         // 3) 跨页断词合并 + 4) 正文字号众数（排除封面艺术字 run）
         joinHyphenated(allLines);
-        float coverSize = coverRunSize(allLines);
+        float coverSize = coverRunSize(allLines, props);
         float bodySize = bodyMode(allLines, coverSize);
 
         // 5) 组装 sections（标题切分）+ 列表 + 流式表格
@@ -151,10 +157,10 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
 
             // 标题护栏：候选字号仅取最大 3 档；行长 >80 的大字不判标题；
             // 封面艺术字（均匀大字号多行 run）排除；标题须为孤立行（下一行字号不同）
-            List<Float> headSizes = headingSizes(allLines, bodySize);
+            List<Float> headSizes = headingSizes(allLines, bodySize, headFactor, props == null ? 3 : (int) props.maxHeadingTiers);
             boolean isolated = i == allLines.size() - 1
                     || Math.abs(allLines.get(i + 1).size - ln.size) > 0.5f;
-            if (ln.size >= bodySize * HEAD_FACTOR && text.length() <= 80
+            if (ln.size >= bodySize * headFactor && text.length() <= 80
                     && Math.abs(ln.size - coverSize) > 0.5f
                     && isolated
                     && headSizes.contains(Float.valueOf(qsize(ln.size)))) {
@@ -166,7 +172,7 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
                 body = new StringBuilder();
                 current = new DocumentSection();
                 current.title = text;
-                current.level = headingLevel(allLines, i, bodySize);
+                current.level = headingLevel(allLines, i, bodySize, headFactor, props == null ? 3 : (int) props.maxHeadingTiers);
                 currentIsHeading = true;
                 listLevelXs.clear();
                 // 延迟入列：由下一次 flush 或循环末尾统一 add，避免标题段整段重复
@@ -208,7 +214,7 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
 
     // ---------------- 分栏 ----------------
 
-    private static List<List<PageChunk>> splitColumns(List<PageChunk> chunks) {
+    private List<List<PageChunk>> splitColumns(List<PageChunk> chunks) {
         List<List<PageChunk>> cols = new ArrayList<List<PageChunk>>();
         if (chunks.isEmpty()) return cols;
         List<PageChunk> sorted = new ArrayList<PageChunk>(chunks);
@@ -221,7 +227,7 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
             if (!cur.isEmpty()) {
                 float estEnd = lastEnd + 0.0f; // 由下面重算
             }
-            if (!cur.isEmpty() && c.x - endOf(cur) > COLUMN_GAP) {
+            if (!cur.isEmpty() && c.x - endOf(cur) > columnGapPt) {
                 cols.add(cur);
                 cur = new ArrayList<PageChunk>();
             }
@@ -386,7 +392,7 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
      * 封面艺术字检测：最大字号构成 ≥2 行的连续 run，且比次大 distinct 字号大 50% 以上。
      * 返回该字号；无则返回 -1。
      */
-    private static float coverRunSize(List<Line> lines) {
+    private static float coverRunSize(List<Line> lines, PdfExtractionProperties props) {
         List<Float> distinct = new ArrayList<Float>();
         for (Line l : lines) {
             Float q = Float.valueOf(qsize(l.size));
@@ -408,27 +414,27 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
         if (maxRun < 2) return -1f;
         if (distinct.size() < 2) return -1f;
         float next = distinct.get(1);
-        return largest > next * 1.5f ? largest : -1f;
+        return largest > next * (props == null ? 1.5f : (float) props.coverRatio) ? largest : -1f;
     }
 
     /** 候选标题字号（降序，最多 3 档）：超出档位的大字降为正文。 */
-    private static List<Float> headingSizes(List<Line> lines, float bodySize) {
+    private static List<Float> headingSizes(List<Line> lines, float bodySize, float headFactor, int maxTiers) {
         List<Float> sizes = new ArrayList<Float>();
         for (Line l : lines) {
             float q = qsize(l.size);
-            if (l.size >= bodySize * HEAD_FACTOR && !sizes.contains(Float.valueOf(q))) {
+            if (l.size >= bodySize * headFactor && !sizes.contains(Float.valueOf(q))) {
                 sizes.add(Float.valueOf(q));
             }
         }
         Collections.sort(sizes, Collections.reverseOrder());
-        if (sizes.size() > 3) {
-            sizes = new ArrayList<Float>(sizes.subList(0, 3));
+        if (sizes.size() > maxTiers) {
+            sizes = new ArrayList<Float>(sizes.subList(0, maxTiers));
         }
         return sizes;
     }
 
-    private static int headingLevel(List<Line> lines, int idx, float bodySize) {
-        List<Float> sizes = headingSizes(lines, bodySize);
+    private static int headingLevel(List<Line> lines, int idx, float bodySize, float headFactor, int maxTiers) {
+        List<Float> sizes = headingSizes(lines, bodySize, headFactor, maxTiers);
         int lv = sizes.indexOf(Float.valueOf(qsize(lines.get(idx).size))) + 1;
         return Math.max(1, Math.min(6, lv));
     }

@@ -5,7 +5,7 @@
     <artifactId>easypdf</artifactId>
     <name>${project.groupId}:${project.artifactId}</name>
     <url>https://github.com/easy-4-java/${project.artifactId}</url>
-    <version>1.0.x.20260630-SNAPSHOT</version>
+    <version>1.0.x.20260630</version>
     <description>Building Word/PDF documents based on XHTML templates using Docx4j and iText</description>
     <packaging>pom</packaging>
 
@@ -71,6 +71,7 @@
         <itext-xfa.version>2.0.5</itext-xfa.version>
         <itext.version>7.1.10</itext.version>
         <jackson.version>2.17.2</jackson.version>
+        <jackson-bom.version>2.18.9</jackson-bom.version>
         <javax-activation.version>1.1.1</javax-activation.version>
         <javax.mail-api.version>1.6.2</javax.mail-api.version>
         <jetbrick.version>2.1.10</jetbrick.version>
@@ -332,6 +333,9 @@
                         <charset>${project.build.sourceEncoding}</charset>
                         <encoding>${project.build.sourceEncoding}</encoding>
                         <docencoding>${project.build.sourceEncoding}</docencoding>
+                        <!-- 老代码 javadoc 警告较多；发布不因 doclint 失败 -->
+                        <failOnError>false</failOnError>
+                        <doclint>none</doclint>
                     </configuration>
                     <executions>
                         <execution>
@@ -599,6 +603,19 @@
                         </executions>
                     </plugin>
 
+                    <!-- Central Portal requires -sources.jar and -javadoc.jar per artifact -->
+                    <!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-source-plugin -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-source-plugin</artifactId>
+                    </plugin>
+
+                    <!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-javadoc-plugin -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                    </plugin>
+
                     <!-- https://mvnrepository.com/artifact/org.sonatype.central/central-publishing-maven-plugin -->
                     <plugin>
                         <!-- 发布插件：将制品发布到 Maven Central Portal -->
@@ -620,6 +637,16 @@
     <!-- 依赖版本统一管理（dependencyManagement） -->
     <dependencyManagement>
         <dependencies>
+
+            <!-- Jackson 2.x BOM — manages versions for all jackson modules -->
+            <dependency>
+                <groupId>com.fasterxml.jackson</groupId>
+                <artifactId>jackson-bom</artifactId>
+                <version>${jackson-bom.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
             <!-- For Junit -->
             <dependency>
                 <groupId>junit</groupId>

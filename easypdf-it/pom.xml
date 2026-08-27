@@ -8,7 +8,7 @@
     <parent>
         <groupId>io.github.easy4j</groupId>
         <artifactId>easypdf</artifactId>
-        <version>1.0.x.20260630-SNAPSHOT</version>
+        <version>1.0.x.20260630</version>
     </parent>
 
     <artifactId>easypdf-it</artifactId>
@@ -18,8 +18,12 @@
     <packaging>jar</packaging>
 
     <properties>
-        <!-- IT 类不会作为主 jar 的一部分分发；保留 jar 包装便于 mvn install -DskipITs -->
-        <maven.install.skip>${maven.test.skip}</maven.install.skip>
+        <!-- 纯测试模块：不 install、不 deploy、不发布 Central（无 main 源码）。
+             保持 jar packaging 以便 Failsafe 编译并运行 *IT.java（pom packaging 会跳过 test 编译）。 -->
+        <maven.install.skip>true</maven.install.skip>
+        <maven.deploy.skip>true</maven.deploy.skip>
+        <!-- central profile 的 central-publishing-maven-plugin 读取该属性跳过本模块发布 -->
+        <skipPublishing>true</skipPublishing>
     </properties>
 
     <dependencies>
@@ -113,6 +117,51 @@
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <configuration>
                     <skip>true</skip>
+                </configuration>
+            </plugin>
+
+            <!-- 纯测试模块：无 main 源码，不生成 sources/javadoc 附件
+                 （否则 install 报 "did not assign a main file but has attachments"） -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+
+            <!-- 纯测试模块：不生成 CycloneDX SBOM 附件（避免无主 jar 却带附件） -->
+            <plugin>
+                <groupId>org.cyclonedx</groupId>
+                <artifactId>cyclonedx-maven-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+
+            <!-- 纯测试模块：无主 jar，不参与 GPG 签名 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+
+            <!-- 纯测试模块：不发布到 Central（官方 skipPublishing 按模块排除机制） -->
+            <plugin>
+                <groupId>org.sonatype.central</groupId>
+                <artifactId>central-publishing-maven-plugin</artifactId>
+                <extensions>false</extensions>
+                <configuration>
+                    <skipPublishing>true</skipPublishing>
                 </configuration>
             </plugin>
 

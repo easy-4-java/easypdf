@@ -135,4 +135,43 @@ class StructureDetectTest {
         // 正文字号（≥ 正文阈值）的同形文本不判题注
         assertThat(md).doesNotContain("*正文段落第一行。*");
     }
+
+    // ---------------- W2-4 中英空格阈值配置化 ----------------
+
+    @Test
+    void cjkGapFactorDefaultsToQuarterTenth() {
+        assertThat(PdfExtractionProperties.defaults().cjkGapFactor).isEqualTo(0.22f);
+    }
+
+    @Test
+    void shouldInsertSpaceJudgesByGapTimesFactor() {
+        assertThat(RuleLayoutAnalyzer.shouldInsertSpace(2.6f, 10f, 0.22f)).isTrue();
+        assertThat(RuleLayoutAnalyzer.shouldInsertSpace(2.2f, 10f, 0.22f)).isFalse(); // 边界取不插
+        assertThat(RuleLayoutAnalyzer.shouldInsertSpace(1.6f, 10f, 0.22f)).isFalse();
+        assertThat(RuleLayoutAnalyzer.shouldInsertSpace(1.6f, 10f, 0.05f)).isTrue(); // 阈值更小则插
+        assertThat(RuleLayoutAnalyzer.shouldInsertSpace(3.0f, 10f, 0.4f)).isFalse(); // 阈值更大则不插
+    }
+
+    /** 两英文 chunk 净间隙 = 字号×0.15：默认 0.22 不插空格，调至 0.05 后应插入。 */
+    private static List<PageModel> manualLatinGapPages() {
+        PageModel page = new PageModel(1);
+        page.chunks.add(new PageChunk("Hello", 20f, 700f, 10f, false, false, 1, -1));
+        page.chunks.add(new PageChunk("World", 49f, 700f, 10f, false, false, 1, -1));
+        List<PageModel> pages = new java.util.ArrayList<PageModel>();
+        pages.add(page);
+        return pages;
+    }
+
+    @Test
+    void smallerCjkGapFactorInsertsWordSpaces() throws Exception {
+        DocumentStructure def = new RuleLayoutAnalyzer()
+                .analyze(manualLatinGapPages(), Collections.<int[]>emptyList(), "t");
+        assertThat(def.fullMarkdown()).contains("HelloWorld").doesNotContain("Hello World");
+
+        PdfExtractionProperties props = new PdfExtractionProperties();
+        props.cjkGapFactor = 0.05f;
+        DocumentStructure tuned = new RuleLayoutAnalyzer(props)
+                .analyze(manualLatinGapPages(), Collections.<int[]>emptyList(), "t");
+        assertThat(tuned.fullMarkdown()).contains("Hello World");
+    }
 }

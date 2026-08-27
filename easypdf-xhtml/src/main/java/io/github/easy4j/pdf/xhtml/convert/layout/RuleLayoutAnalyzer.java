@@ -34,6 +34,16 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
     private static final float HEAD_FACTOR = 1.22f;
 
     private final LatticeTableFinder tableFinder = new LatticeTableFinder();
+    /** 中英文字间系数：净间隙 > 前字号 × 该系数 视为词间空格（见 PdfExtractionProperties.cjkGapFactor）。 */
+    private final float cjkGapFactor;
+
+    public RuleLayoutAnalyzer() {
+        this(PdfExtractionProperties.defaults());
+    }
+
+    public RuleLayoutAnalyzer(PdfExtractionProperties props) {
+        this.cjkGapFactor = props != null ? props.cjkGapFactor : 0.22f;
+    }
 
     @Override
     public String name() {
@@ -85,7 +95,7 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
                 // 分栏：x 直方图找宽空白带
                 List<List<PageChunk>> columns = splitColumns(flowChunks);
                 for (List<PageChunk> col : columns) {
-                    allLines.addAll(buildLines(col, page.pageNo));
+                    allLines.addAll(buildLines(col, page.pageNo, cjkGapFactor));
                 }
             }
         }
@@ -229,7 +239,7 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
 
     // ---------------- 行构建 ----------------
 
-    private static List<Line> buildLines(List<PageChunk> col, int pageNo) {
+    private static List<Line> buildLines(List<PageChunk> col, int pageNo, float gapFactor) {
         List<Line> lines = new ArrayList<Line>();
         List<PageChunk> sorted = new ArrayList<PageChunk>(col);
         Collections.sort(sorted, new Comparator<PageChunk>() {
@@ -266,7 +276,7 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
                 if (prev != null && sb.length() > 0) {
                     float gap = c.x - (prev.x + prev.text.length() * prev.size * 0.55f);
                     boolean latin = isLatinTail(sb) && isLatinHead(c.text);
-                    if (gap > prev.size * 0.22f && latin) {
+                    if (latin && shouldInsertSpace(gap, prev.size, gapFactor)) {
                         sb.append(' ');
                     }
                 }
@@ -276,6 +286,11 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
             l.text = sb.toString();
         }
         return lines;
+    }
+
+    /** 中英字间判定：净间隙 > 前一 chunk 字号 × 系数 时视为词间空格。 */
+    static boolean shouldInsertSpace(float gap, float size, float factor) {
+        return gap > size * factor;
     }
 
     private static boolean isLatinTail(StringBuilder sb) {

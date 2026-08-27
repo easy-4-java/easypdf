@@ -488,4 +488,31 @@ class RobustnessTest {
         DocumentStructure doc = PdfStructureExtractor.extract(pdf);
         assertThat(doc).isNotNull();
     }
+
+    // ---------------- Round5-Security Task 3: canonical 路径校验 + 日志转义 ----------------
+
+    @Test
+    void requiresNonNullPdf() {
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> EasyPdf.pdfToMarkdown((File) null))
+                .isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
+    void requiresFileThatExists() {
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                () -> EasyPdf.pdfToMarkdown(new File("/no.pdf")))
+            .isInstanceOf(ExtractionException.class)
+            .isInstanceOfSatisfying(ExtractionException.class,
+                e -> assertThat(e.getCode()).isEqualTo(ExtractionException.Code.NOT_FOUND));
+    }
+
+    @Test
+    void escapeHandlesControlChars() {
+        String in = "line1\nline2\tcol";
+        String out = EasyPdf.escapeForLog(in); // 同包可见
+        assertThat(out).doesNotContain("\n").doesNotContain("\t");
+        // 反斜杠自身先转义，保证转义序列不可被二次解释
+        assertThat(EasyPdf.escapeForLog("a\\nb")).isEqualTo("a\\\\nb");
+        assertThat(EasyPdf.escapeForLog("r\\r")).isEqualTo("r\\\\r");
+    }
 }

@@ -14,6 +14,7 @@ import org.junit.jupiter.api.io.TempDir;
 import io.github.easy4j.pdf.core.convert.HtmlPdfConverter;
 import io.github.easy4j.pdf.xhtml.convert.layout.ExtractCache;
 import io.github.easy4j.pdf.xhtml.convert.layout.PdfExtractionProperties;
+import io.github.easy4j.pdf.xhtml.convert.layout.RestLayoutAnalyzer;
 
 /**
  * Round 3 工程健壮性与 Tagged 适配回归：
@@ -215,5 +216,121 @@ class RobustnessTest {
         assertThat(cache.get("k1")).isSameAs(a);
         assertThat(cache.get("k2")).isNull();
         assertThat(cache.get("k3")).isSameAs(c);
+    }
+
+    // ---------------- W3-5: 阈值配置化 + REST 重试 ----------------
+
+    @Test
+    void extractionThresholdDefaultsMatchCurrentBehavior() {
+        PdfExtractionProperties d = PdfExtractionProperties.defaults();
+        assertThat(d.headFactor).isEqualTo(1.22f);
+        assertThat(d.maxHeadingTiers).isEqualTo(3);
+        assertThat(d.coverRunMinLines).isEqualTo(2);
+        assertThat(d.coverRatio).isEqualTo(1.5f);
+        assertThat(d.columnGapPt).isEqualTo(55f);
+        assertThat(d.streamAlignTolPt).isEqualTo(6f);
+        assertThat(d.restRetries).isEqualTo(0);
+        assertThat(d.cacheEnabled).isFalse();
+    }
+
+    @Test
+    void restRetriesWithExponentialBackoffSucceedsAfterTransient500() throws Exception {
+        java.util.concurrent.atomic.AtomicInteger calls =
+                new java.util.concurrent.atomic.AtomicInteger();
+        com.sun.net.httpserver.HttpServer server =
+                com.sun.net.httpserver.HttpServer.create(new java.net.InetSocketAddress("127.0.0.1", 0), 0);
+        final String json = "{\"title\":\"重试成功\",\"sections\":[{\"title\":\"章节\",\"level\":1,\"content\":\"正文\"}],\"tables\":[]}";
+        server.createContext("/layout", exchange -> {
+            boolean firstCall = calls.incrementAndGet() == 1;
+            byte[] resp = json.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            if (firstCall) {
+                exchange.sendResponseHeaders(500, 0); // 第 1 次瞬时故障
+                exchange.close();
+                return;
+            }
+            exchange.getResponseHeaders().add("Content-Type", "application/json");
+            exchange.sendResponseHeaders(200, resp.length);
+            try (java.io.OutputStream os = exchange.getResponseBody()) {
+                os.write(resp);
+            }
+        });
+        server.start();
+        try {
+            PdfExtractionProperties props = PdfExtractionProperties.defaults();
+            props.restEndpoint = "http://127.0.0.1:" + server.getAddress().getPort() + "/layout";
+            props.restTimeoutMillis = 3000;
+            props.restRetries = 1;
+
+            DocumentStructure ds = new RestLayoutAnalyzer(props)
+                    .analyze(new byte[] {9}, "本地标题");
+            assertThat(ds.title).isEqualTo("重试成功"); // 第 2 次 200 成功
+            assertThat(calls.get()).isEqualTo(2);
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test
+    void restRetriesCapAppliedOnPersistent500() throws Exception {
+        java.util.concurrent.atomic.AtomicInteger calls =
+                new java.util.concurrent.atomic.AtomicInteger();
+        com.sun.net.httpserver.HttpServer server =
+                com.sun.net.httpserver.HttpServer.create(new java.net.InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/layout", exchange -> {
+            calls.incrementAndGet();
+            exchange.sendResponseHeaders(500, 0);
+            exchange.close();
+        });
+        server.start();
+        try {
+            PdfExtractionProperties props = PdfExtractionProperties.defaults();
+            props.restEndpoint = "http://127.0.0.1:" + server.getAddress().getPort() + "/layout";
+            props.restTimeoutMillis = 3000;
+            props.restRetries = 5; // 超上限应被压到 3
+
+            org.assertj.core.api.Assertions.assertThatThrownBy(
+                    () -> new RestLayoutAnalyzer(props).analyze(new byte[] {9}, "t"))
+                    .isInstanceOf(java.io.IOException.class)
+                    .hasMessageContaining("HTTP 500");
+            assertThat(calls.get()).isEqualTo(4); // 1 次原始请求 + 上限 3 次重试
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test
+    void restDoesNotRetryClientErrors() throws Exception {
+        java.util.concurrent.atomic.AtomicInteger calls =
+                new java.util.concurrent.atomic.AtomicInteger();
+        com.sun.net.httpserver.HttpServer server =
+                com.sun.net.httpserver.HttpServer.create(new java.net.InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/layout", exchange -> {
+            calls.incrementAndGet();
+            exchange.sendResponseHeaders(403, 0); // 4xx（非 429）不重试
+            exchange.close();
+        });
+        server.start();
+        try {
+            PdfExtractionProperties props = PdfExtractionProperties.defaults();
+            props.restEndpoint = "http://127.0.0.1:" + server.getAddress().getPort() + "/layout";
+            props.restTimeoutMillis = 3000;
+            props.restRetries = 2;
+
+            org.assertj.core.api.Assertions.assertThatThrownBy(
+                    () -> new RestLayoutAnalyzer(props).analyze(new byte[] {9}, "t"))
+                    .isInstanceOf(java.io.IOException.class)
+                    .hasMessageContaining("HTTP 403");
+            assertThat(calls.get()).isEqualTo(1);
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test
+    void backoffGrowsExponentiallyFromBase500ms() {
+        assertThat(RestLayoutAnalyzer.backoffMillis(0)).isEqualTo(500L);
+        assertThat(RestLayoutAnalyzer.backoffMillis(1)).isEqualTo(1000L);
+        assertThat(RestLayoutAnalyzer.backoffMillis(2)).isEqualTo(2000L);
+        assertThat(RestLayoutAnalyzer.backoffMillis(7)).isEqualTo(8000L); // 封顶防移位溢出
     }
 }

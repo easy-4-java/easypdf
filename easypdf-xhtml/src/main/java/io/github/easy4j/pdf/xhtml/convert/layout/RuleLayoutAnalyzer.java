@@ -25,30 +25,32 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
     private static final Pattern ORDERED = Pattern.compile("^(\\d{1,2}|[a-z]|[ivxIVX]{1,4})[.)、]\\s*");
     /** 题注：图/表/Figure/Table/Fig. + 编号（字号 ≤ 正文时判为题注）。 */
     private static final Pattern CAPTION = Pattern.compile("^(图|表|Figure|Table|Fig\\.?)\\s*\\d+");
-    private static final float COLUMN_GAP = 55f;
 
     /** 字号量化到 0.5pt 桶，消除渲染浮点噪声（11.2 vs 11.4 等）。 */
     private static float qsize(float v) {
         return Math.round(v * 2f) / 2f;
     }
-    private static final float HEAD_FACTOR = 1.22f;
 
     private final LatticeTableFinder tableFinder = new LatticeTableFinder();
+    /** 规则引擎阈值（分栏/流式表格/封面 run/标题档位），默认 {@link TierConfig#DEFAULT}。 */
+    private final TierConfig config;
     /** 中英文字间系数：净间隙 > 前字号 × 该系数 视为词间空格（见 PdfExtractionProperties.cjkGapFactor）。 */
     private final float cjkGapFactor;
-    private final PdfExtractionProperties props;
-    private final float columnGapPt;
-    private final float headFactor;
 
     public RuleLayoutAnalyzer() {
         this(PdfExtractionProperties.defaults());
     }
 
     public RuleLayoutAnalyzer(PdfExtractionProperties props) {
-        this.props = props != null ? props : PdfExtractionProperties.defaults();
-        this.cjkGapFactor = this.props.cjkGapFactor;
-        this.columnGapPt = (float) this.props.columnGapPt;
-        this.headFactor = (float) this.props.headFactor;
+        PdfExtractionProperties p = props != null ? props : PdfExtractionProperties.defaults();
+        this.config = TierConfig.from(p);
+        this.cjkGapFactor = p.cjkGapFactor;
+    }
+
+    /** 以显式阈值配置构建（中英文字间系数仍取 {@link PdfExtractionProperties#defaults()}）。 */
+    public RuleLayoutAnalyzer(TierConfig config) {
+        this.config = config != null ? config : TierConfig.DEFAULT;
+        this.cjkGapFactor = PdfExtractionProperties.defaults().cjkGapFactor;
     }
 
     @Override
@@ -111,7 +113,7 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
 
         // 3) 跨页断词合并 + 4) 正文字号众数（排除封面艺术字 run）
         joinHyphenated(allLines);
-        float coverSize = coverRunSize(allLines, props);
+        float coverSize = coverRunSize(allLines);
         float bodySize = bodyMode(allLines, coverSize);
 
         // 5) 组装 sections（标题切分）+ 列表 + 流式表格
@@ -126,7 +128,7 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
         int i = 0;
         while (i < allLines.size()) {
             // 流式表格尝试（连续 ≥3 行、≥2 列 x 对齐）
-            int tableLen = streamTableLength(allLines, i);
+            int tableLen = streamTableLength(allLines, i, config.streamAlignTolPt);
             if (tableLen >= 3) {
                 DocumentTable st = buildStreamTable(allLines, i, tableLen);
                 streamTables.add(st);
@@ -157,10 +159,10 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
 
             // 标题护栏：候选字号仅取最大 3 档；行长 >80 的大字不判标题；
             // 封面艺术字（均匀大字号多行 run）排除；标题须为孤立行（下一行字号不同）
-            List<Float> headSizes = headingSizes(allLines, bodySize, headFactor, props == null ? 3 : (int) props.maxHeadingTiers);
+            List<Float> headSizes = headingSizes(allLines, bodySize, config.headFactor, config.maxHeadingTiers);
             boolean isolated = i == allLines.size() - 1
                     || Math.abs(allLines.get(i + 1).size - ln.size) > 0.5f;
-            if (ln.size >= bodySize * headFactor && text.length() <= 80
+            if (ln.size >= bodySize * config.headFactor && text.length() <= 80
                     && Math.abs(ln.size - coverSize) > 0.5f
                     && isolated
                     && headSizes.contains(Float.valueOf(qsize(ln.size)))) {
@@ -172,7 +174,7 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
                 body = new StringBuilder();
                 current = new DocumentSection();
                 current.title = text;
-                current.level = headingLevel(allLines, i, bodySize, headFactor, props == null ? 3 : (int) props.maxHeadingTiers);
+                current.level = headingLevel(allLines, i, bodySize, config.headFactor, config.maxHeadingTiers);
                 currentIsHeading = true;
                 listLevelXs.clear();
                 // 延迟入列：由下一次 flush 或循环末尾统一 add，避免标题段整段重复
@@ -227,7 +229,7 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
             if (!cur.isEmpty()) {
                 float estEnd = lastEnd + 0.0f; // 由下面重算
             }
-            if (!cur.isEmpty() && c.x - endOf(cur) > columnGapPt) {
+            if (!cur.isEmpty() && c.x - endOf(cur) > config.columnGapPt) {
                 cols.add(cur);
                 cur = new ArrayList<PageChunk>();
             }
@@ -389,10 +391,10 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
     }
 
     /**
-     * 封面艺术字检测：最大字号构成 ≥2 行的连续 run，且比次大 distinct 字号大 50% 以上。
-     * 返回该字号；无则返回 -1。
+     * 封面艺术字检测：最大字号构成 ≥coverRunMinLines 行的连续 run，且比次大 distinct 字号大
+     * coverRatio 倍以上（阈值见 {@link TierConfig}）。返回该字号；无则返回 -1。
      */
-    private static float coverRunSize(List<Line> lines, PdfExtractionProperties props) {
+    private float coverRunSize(List<Line> lines) {
         List<Float> distinct = new ArrayList<Float>();
         for (Line l : lines) {
             Float q = Float.valueOf(qsize(l.size));
@@ -411,10 +413,10 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
                 run = 1;
             }
         }
-        if (maxRun < 2) return -1f;
+        if (maxRun < config.coverRunMinLines) return -1f;
         if (distinct.size() < 2) return -1f;
         float next = distinct.get(1);
-        return largest > next * (props == null ? 1.5f : (float) props.coverRatio) ? largest : -1f;
+        return largest > next * config.coverRatio ? largest : -1f;
     }
 
     /** 候选标题字号（降序，最多 3 档）：超出档位的大字降为正文。 */
@@ -493,7 +495,7 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
 
     // ---------------- 流式表格（无格线，x 对齐） ----------------
 
-    private static int streamTableLength(List<Line> lines, int start) {
+    private static int streamTableLength(List<Line> lines, int start, float alignTol) {
         if (start >= lines.size()) {
             return 0;
         }
@@ -504,7 +506,7 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
         int n = 1;
         for (int i = start + 1; i < lines.size(); i++) {
             List<Float> cs = clusterStarts(lines.get(i));
-            if (cs.size() != first.size() || !aligned(first, cs)) {
+            if (cs.size() != first.size() || !aligned(first, cs, alignTol)) {
                 break;
             }
             n++;
@@ -525,10 +527,10 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
         return xs;
     }
 
-    /** 各行第 k 列起始 x 跨行对齐（±6pt）。 */
-    private static boolean aligned(List<Float> a, List<Float> b) {
+    /** 各行第 k 列起始 x 跨行对齐（容差 alignTol，默认见 TierConfig.streamAlignTolPt=6pt）。 */
+    private static boolean aligned(List<Float> a, List<Float> b, float alignTol) {
         for (int i = 0; i < a.size(); i++) {
-            if (Math.abs(a.get(i).floatValue() - b.get(i).floatValue()) > 6f) {
+            if (Math.abs(a.get(i).floatValue() - b.get(i).floatValue()) > alignTol) {
                 return false;
             }
         }

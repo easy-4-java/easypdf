@@ -14,7 +14,10 @@ import org.junit.jupiter.api.io.TempDir;
 
 import com.itextpdf.html2pdf.HtmlConverter;
 import com.itextpdf.kernel.pdf.EncryptionConstants;
+import com.itextpdf.kernel.pdf.PdfDictionary;
 import com.itextpdf.kernel.pdf.PdfDocument;
+import com.itextpdf.kernel.pdf.PdfName;
+import com.itextpdf.kernel.pdf.PdfString;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.kernel.pdf.WriterProperties;
 
@@ -413,5 +416,103 @@ class RobustnessTest {
             .isInstanceOf(ExtractionException.class)
             .isInstanceOfSatisfying(ExtractionException.class,
                 e -> assertThat(e.getCode()).isEqualTo(ExtractionException.Code.CORRUPT));
+    }
+
+    // ---------------- Round5-Observability Task 1: pageRange 参数校验 ----------------
+
+    @Test
+    void pageRangeRejectsFromGreaterThanTo(@TempDir File dir) throws Exception {
+        File pdf = writePdf(dir, "range-order.pdf",
+            "<html><body><p>页序校验文本。</p></body></html>");
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                () -> EasyPdf.pageRange(pdf, 5, 2)) // from > to 必须立即拒绝
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("fromPage")
+            .hasMessageContaining("toPage");
+    }
+
+    @Test
+    void pageRangeRejectsZeroOrNegativeArgs(@TempDir File dir) throws Exception {
+        File pdf = writePdf(dir, "range-zero.pdf",
+            "<html><body><p>零负参校验文本。</p></body></html>");
+
+        // from=0 / to=0 / 负数：页码从 1 起算，全部拒绝
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                () -> EasyPdf.pageRange(pdf, 0, 1))
+            .isInstanceOf(IllegalArgumentException.class);
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                () -> EasyPdf.pageRange(pdf, 1, 0))
+            .isInstanceOf(IllegalArgumentException.class);
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                () -> EasyPdf.pageRange(pdf, -1, 2))
+            .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void pageRangeAcceptsValidRange(@TempDir File dir) throws Exception {
+        String html = "<html><body>"
+            + "<p>区间第一页独有内容甲。</p>"
+            + "<p style='page-break-before:always'>区间第二页独有内容乙。</p>"
+            + "<p style='page-break-before:always'>区间第三页独有内容丙。</p>"
+            + "</body></html>";
+        File pdf = writePdf(dir, "three-pages-range.pdf", html);
+
+        String md = EasyPdf.pageRange(pdf, 1, 3);
+        assertThat(md).isNotEmpty();
+        assertThat(md).contains("区间第一页独有内容甲").contains("区间第二页独有内容乙")
+            .contains("区间第三页独有内容丙");
+    }
+
+    // ---------------- Round5-Security Task 1: 显式禁用嵌入式 JavaScript ----------------
+
+    @Test
+    void pdfWithEmbeddedJavaScriptIgnored(@TempDir File dir) throws Exception {
+        // 夹具：catalog 挂顶层 /JS 与 /JavaScript 脚本 + OpenAction 为 JavaScript action，
+        // 覆盖打开文档时最典型的脚本解析入口（iText 内核本无 JS 解释器、不执行脚本；
+        // 提取侧的防护由 ParsedDoc 打开后立即剥离上述 catalog 向量白盒保证）
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        try (PdfDocument d = new PdfDocument(new PdfWriter(out))) {
+            d.addNewPage();
+            PdfDictionary jsAction = new PdfDictionary();
+            jsAction.put(PdfName.S, PdfName.JavaScript);
+            jsAction.put(PdfName.JS, new PdfString("app.alert('embedded')"));
+            d.getCatalog().put(PdfName.OpenAction, jsAction);
+            d.getCatalog().put(PdfName.JS, new PdfString("app.alert(1)"));
+            d.getCatalog().put(PdfName.JavaScript, new PdfString("this.doSomething()"));
+        }
+        File pdf = new File(dir, "embedded-js.pdf");
+        java.nio.file.Files.write(pdf.toPath(), out.toByteArray());
+
+        // 主断言：提取成功返回结构（不抛、不阻塞），解析路径不因脚本字典失败
+        DocumentStructure doc = PdfStructureExtractor.extract(pdf);
+        assertThat(doc).isNotNull();
+    }
+
+    // ---------------- Round5-Security Task 3: canonical 路径校验 + 日志转义 ----------------
+
+    @Test
+    void requiresNonNullPdf() {
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> EasyPdf.pdfToMarkdown((File) null))
+                .isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
+    void requiresFileThatExists() {
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                () -> EasyPdf.pdfToMarkdown(new File("/no.pdf")))
+            .isInstanceOf(ExtractionException.class)
+            .isInstanceOfSatisfying(ExtractionException.class,
+                e -> assertThat(e.getCode()).isEqualTo(ExtractionException.Code.NOT_FOUND));
+    }
+
+    @Test
+    void escapeHandlesControlChars() {
+        String in = "line1\nline2\tcol";
+        String out = EasyPdf.escapeForLog(in); // 同包可见
+        assertThat(out).doesNotContain("\n").doesNotContain("\t");
+        // 反斜杠自身先转义，保证转义序列不可被二次解释
+        assertThat(EasyPdf.escapeForLog("a\\nb")).isEqualTo("a\\\\nb");
+        assertThat(EasyPdf.escapeForLog("r\\r")).isEqualTo("r\\\\r");
     }
 }

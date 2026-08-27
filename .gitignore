@@ -190,3 +190,8 @@ demos/**/*.mp4
 
 # 测试运行产物（WordprocessingMLHtmlTemplate 测试在当前目录生成）
 easypdf-*/test
+
+# OWASP dependency-check 数据缓存（NVD 同步后几百 MB）
+.dependency-check-data/
+dependency-check-data/
+odc/

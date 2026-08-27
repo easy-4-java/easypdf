@@ -19,6 +19,7 @@ import com.itextpdf.kernel.pdf.tagging.PdfStructElem;
 import com.itextpdf.kernel.pdf.tagging.PdfStructTreeRoot;
 import com.itextpdf.kernel.pdf.tagging.StandardRoles;
 
+import io.github.easy4j.pdf.xhtml.convert.layout.ExtractCache;
 import io.github.easy4j.pdf.xhtml.convert.layout.PageModel;
 import io.github.easy4j.pdf.xhtml.convert.layout.PageModelListener;
 import io.github.easy4j.pdf.xhtml.convert.layout.PdfExtractionProperties;
@@ -43,8 +44,22 @@ public final class PdfStructureExtractor {
         if (!pdf.isFile()) {
             throw new IOException("PDF not found: " + pdf.getAbsolutePath());
         }
+        PdfExtractionProperties p = props != null ? props : PdfExtractionProperties.defaults();
+        String cacheKey = null;
+        if (p.cacheEnabled) {
+            // LRU 缓存（默认关）：key 绑定路径+修改时间+长度，文件变化自然失效
+            cacheKey = ExtractCache.keyOf(pdf);
+            DocumentStructure hit = ExtractCache.shared().get(cacheKey);
+            if (hit != null) {
+                return hit;
+            }
+        }
         try (ParsedDoc pd = new ParsedDoc(pdf)) {
-            return extractAll(pd, props);
+            DocumentStructure doc = extractAll(pd, p);
+            if (cacheKey != null) {
+                ExtractCache.shared().put(cacheKey, doc);
+            }
+            return doc;
         }
     }
 

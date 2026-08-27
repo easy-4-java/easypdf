@@ -18,6 +18,11 @@ public final class PdfExtractionProperties {
     public String restEndpoint;
     public int restTimeoutMillis = 10000;
 
+    // ---- Round 3 追加属性（默认值=现行为）----
+
+    /** 是否启用提取结果 LRU 缓存（共享实例，容量 16；key 含路径/mtime/长度）。 */
+    public boolean cacheEnabled = false;
+
     public static PdfExtractionProperties defaults() {
         return new PdfExtractionProperties();
     }

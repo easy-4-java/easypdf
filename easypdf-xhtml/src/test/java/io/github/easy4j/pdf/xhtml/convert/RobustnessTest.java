@@ -12,6 +12,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import io.github.easy4j.pdf.core.convert.HtmlPdfConverter;
+import io.github.easy4j.pdf.xhtml.convert.layout.ExtractCache;
+import io.github.easy4j.pdf.xhtml.convert.layout.PdfExtractionProperties;
 
 /**
  * Round 3 工程健壮性与 Tagged 适配回归：
@@ -158,5 +160,60 @@ class RobustnessTest {
             + "</body></html>");
         String md = PdfStructureExtractor.extract(pdf).fullMarkdown();
         assertThat(md).contains("首页要点记录。").contains("次页补充说明。");
+    }
+
+    // ---------------- W3-4: 提取结果 LRU 缓存 ----------------
+
+    @Test
+    void cacheEnabledSecondExtractHits(@TempDir File dir) throws Exception {
+        File pdf = writePdf(dir, "cached.pdf",
+            "<html><body><p>缓存命中验证文本。</p></body></html>");
+        ExtractCache.shared().clear(); // 测试隔离
+        PdfExtractionProperties props = PdfExtractionProperties.defaults();
+        props.cacheEnabled = true;
+
+        DocumentStructure first = PdfStructureExtractor.extract(pdf, props);
+        assertThat(ExtractCache.shared().misses()).isEqualTo(1);
+
+        DocumentStructure second = PdfStructureExtractor.extract(pdf, props);
+        assertThat(ExtractCache.shared().hits()).isEqualTo(1); // 二次调用直接命中
+        assertThat(second.fullMarkdown()).isEqualTo(first.fullMarkdown());
+        assertThat(second.fullMarkdown()).contains("缓存命中验证文本。");
+    }
+
+    @Test
+    void cacheDisabledByDefaultNeverCountsHits(@TempDir File dir) throws Exception {
+        File pdf = writePdf(dir, "plain.pdf",
+            "<html><body><p>未开启缓存应重复解析。</p></body></html>");
+        ExtractCache.shared().clear();
+        PdfStructureExtractor.extract(pdf);
+        PdfStructureExtractor.extract(pdf);
+        assertThat(ExtractCache.shared().hits()).isEqualTo(0);
+        assertThat(ExtractCache.shared().misses()).isEqualTo(0); // 默认关：完全不触缓存
+    }
+
+    @Test
+    void cacheKeyBindsPathSizeAndMtime(@TempDir File dir) throws Exception {
+        File f = new File(dir, "k.pdf");
+        java.nio.file.Files.write(f.toPath(), new byte[] {1});
+        String k1 = ExtractCache.keyOf(f);
+        assertThat(ExtractCache.keyOf(f)).isEqualTo(k1);
+        f.setLastModified(f.lastModified() + 60_000L); // 修改时间变化 → 新 key
+        assertThat(ExtractCache.keyOf(f)).isNotEqualTo(k1);
+    }
+
+    @Test
+    void lruEvictsLeastRecentlyUsedBeyondCapacity() {
+        ExtractCache cache = new ExtractCache(2);
+        DocumentStructure a = new DocumentStructure();
+        DocumentStructure b = new DocumentStructure();
+        DocumentStructure c = new DocumentStructure();
+        cache.put("k1", a);
+        cache.put("k2", b);
+        cache.get("k1");              // k1 升为最近使用
+        cache.put("k3", c);           // 容量 2：淘汰最久未用的 k2
+        assertThat(cache.get("k1")).isSameAs(a);
+        assertThat(cache.get("k2")).isNull();
+        assertThat(cache.get("k3")).isSameAs(c);
     }
 }

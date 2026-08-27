@@ -21,8 +21,10 @@ import io.github.easy4j.pdf.xhtml.convert.DocumentTable;
  */
 public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
 
-    private static final Pattern UNORDERED = Pattern.compile("^[•·◦‣\\-]\\s*");
+    private static final Pattern UNORDERED = Pattern.compile("^[•·◦‣○▪o\\-]\\s*");
     private static final Pattern ORDERED = Pattern.compile("^(\\d{1,2}|[a-z]|[ivxIVX]{1,4})[.)、]\\s*");
+    /** 题注：图/表/Figure/Table/Fig. + 编号（字号 ≤ 正文时判为题注）。 */
+    private static final Pattern CAPTION = Pattern.compile("^(图|表|Figure|Table|Fig\\.?)\\s*\\d+");
     private static final float COLUMN_GAP = 55f;
 
     /** 字号量化到 0.5pt 桶，消除渲染浮点噪声（11.2 vs 11.4 等）。 */
@@ -32,6 +34,22 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
     private static final float HEAD_FACTOR = 1.22f;
 
     private final LatticeTableFinder tableFinder = new LatticeTableFinder();
+    /** 中英文字间系数：净间隙 > 前字号 × 该系数 视为词间空格（见 PdfExtractionProperties.cjkGapFactor）。 */
+    private final float cjkGapFactor;
+    private final PdfExtractionProperties props;
+    private final float columnGapPt;
+    private final float headFactor;
+
+    public RuleLayoutAnalyzer() {
+        this(PdfExtractionProperties.defaults());
+    }
+
+    public RuleLayoutAnalyzer(PdfExtractionProperties props) {
+        this.props = props != null ? props : PdfExtractionProperties.defaults();
+        this.cjkGapFactor = this.props.cjkGapFactor;
+        this.columnGapPt = (float) this.props.columnGapPt;
+        this.headFactor = (float) this.props.headFactor;
+    }
 
     @Override
     public String name() {
@@ -43,6 +61,7 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
         String text;
         float size;
         boolean bold;
+        boolean mono;
         float x, y;
         int page;
         List<PageChunk> chunks = new ArrayList<PageChunk>();
@@ -56,7 +75,7 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
 
         // 1) 每页：格线表格（含单元格图片）+ 表格外 chunks 进入分栏/行流水线
         List<Line> allLines = new ArrayList<Line>();
-        List<DocumentTable> tables = new ArrayList<DocumentTable>();
+        List<Tier1Table> tier1Tables = new ArrayList<Tier1Table>();
         List<DocumentTable> streamTables = new ArrayList<DocumentTable>();
         List<String> looseImages = new ArrayList<String>();
         if (pages != null) {
@@ -64,9 +83,9 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
                 List<TableRegion> regions = tableFinder.find(page);
                 List<PageChunk> flowChunks = new ArrayList<PageChunk>(page.chunks);
                 for (TableRegion r : regions) {
-                    DocumentTable tbl = buildTable(page, r);
-                    if (tbl != null) {
-                        tables.add(tbl);
+                    Tier1Table tt = buildTier1Table(page.pageNo, page, r);
+                    if (tt != null) {
+                        tier1Tables.add(tt);
                         removeInside(flowChunks, r);
                     }
                 }
@@ -82,7 +101,7 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
                 // 分栏：x 直方图找宽空白带
                 List<List<PageChunk>> columns = splitColumns(flowChunks);
                 for (List<PageChunk> col : columns) {
-                    allLines.addAll(buildLines(col, page.pageNo));
+                    allLines.addAll(buildLines(col, page.pageNo, cjkGapFactor));
                 }
             }
         }
@@ -92,7 +111,7 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
 
         // 3) 跨页断词合并 + 4) 正文字号众数（排除封面艺术字 run）
         joinHyphenated(allLines);
-        float coverSize = coverRunSize(allLines);
+        float coverSize = coverRunSize(allLines, props);
         float bodySize = bodyMode(allLines, coverSize);
 
         // 5) 组装 sections（标题切分）+ 列表 + 流式表格
@@ -103,6 +122,7 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
         StringBuilder body = new StringBuilder();
 
         boolean currentIsHeading = false;
+        List<Float> listLevelXs = new ArrayList<Float>(); // 各层级列表行 x 起点（末位=当前最深级）
         int i = 0;
         while (i < allLines.size()) {
             // 流式表格尝试（连续 ≥3 行、≥2 列 x 对齐）
@@ -117,12 +137,30 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
             String text = ln.text.trim();
             if (text.isEmpty()) { i++; continue; }
 
+            // 代码块：连续 ≥3 行等宽字体且行距均匀 → 围栏包裹，内容原样保留
+            int codeLen = codeBlockLength(allLines, i);
+            if (codeLen >= 3) {
+                body.append("```\n");
+                for (int k = 0; k < codeLen; k++) {
+                    body.append(allLines.get(i + k).text).append('\n');
+                }
+                body.append("```\n");
+                i += codeLen;
+                continue;
+            }
+            // 题注：图/表/Figure/Table 编号行且字号不大于正文 → 斜体单独成段
+            if (ln.size <= bodySize + 0.5f && CAPTION.matcher(text).find()) {
+                body.append('*').append(text).append("*\n");
+                i++;
+                continue;
+            }
+
             // 标题护栏：候选字号仅取最大 3 档；行长 >80 的大字不判标题；
             // 封面艺术字（均匀大字号多行 run）排除；标题须为孤立行（下一行字号不同）
-            List<Float> headSizes = headingSizes(allLines, bodySize);
+            List<Float> headSizes = headingSizes(allLines, bodySize, headFactor, props == null ? 3 : (int) props.maxHeadingTiers);
             boolean isolated = i == allLines.size() - 1
                     || Math.abs(allLines.get(i + 1).size - ln.size) > 0.5f;
-            if (ln.size >= bodySize * HEAD_FACTOR && text.length() <= 80
+            if (ln.size >= bodySize * headFactor && text.length() <= 80
                     && Math.abs(ln.size - coverSize) > 0.5f
                     && isolated
                     && headSizes.contains(Float.valueOf(qsize(ln.size)))) {
@@ -134,16 +172,22 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
                 body = new StringBuilder();
                 current = new DocumentSection();
                 current.title = text;
-                current.level = headingLevel(allLines, i, bodySize);
+                current.level = headingLevel(allLines, i, bodySize, headFactor, props == null ? 3 : (int) props.maxHeadingTiers);
                 currentIsHeading = true;
+                listLevelXs.clear();
                 // 延迟入列：由下一次 flush 或循环末尾统一 add，避免标题段整段重复
                 i++;
                 continue;
             }
             String lst = listMarker(text);
             if (lst != null) {
+                int lvl = nestedListLevel(listLevelXs, ln.x);
+                for (int s = 0; s < lvl; s++) {
+                    body.append("  "); // 2 空格/级
+                }
                 body.append(lst).append(text.substring(markerLen(text))).append('\n');
             } else {
+                listLevelXs.clear(); // 普通段落打断列表层级上下文
                 body.append(text).append('\n');
             }
             i++;
@@ -157,7 +201,7 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
             sections.add(current);
         }
         doc.sections = sections;
-        doc.tables.addAll(tables);
+        doc.tables.addAll(mergeContinuedTables(tier1Tables, bodySize));
         doc.tables.addAll(streamTables);
         StringBuilder sec;
         for (String uri : looseImages) {
@@ -170,7 +214,7 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
 
     // ---------------- 分栏 ----------------
 
-    private static List<List<PageChunk>> splitColumns(List<PageChunk> chunks) {
+    private List<List<PageChunk>> splitColumns(List<PageChunk> chunks) {
         List<List<PageChunk>> cols = new ArrayList<List<PageChunk>>();
         if (chunks.isEmpty()) return cols;
         List<PageChunk> sorted = new ArrayList<PageChunk>(chunks);
@@ -183,7 +227,7 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
             if (!cur.isEmpty()) {
                 float estEnd = lastEnd + 0.0f; // 由下面重算
             }
-            if (!cur.isEmpty() && c.x - endOf(cur) > COLUMN_GAP) {
+            if (!cur.isEmpty() && c.x - endOf(cur) > columnGapPt) {
                 cols.add(cur);
                 cur = new ArrayList<PageChunk>();
             }
@@ -201,7 +245,7 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
 
     // ---------------- 行构建 ----------------
 
-    private static List<Line> buildLines(List<PageChunk> col, int pageNo) {
+    private static List<Line> buildLines(List<PageChunk> col, int pageNo, float gapFactor) {
         List<Line> lines = new ArrayList<Line>();
         List<PageChunk> sorted = new ArrayList<PageChunk>(col);
         Collections.sort(sorted, new Comparator<PageChunk>() {
@@ -218,9 +262,13 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
                 cur = new Line();
                 cur.page = pageNo;
                 cur.x = c.x; cur.y = c.y; cur.size = c.size; cur.bold = c.bold;
+                cur.mono = c.mono;
                 lines.add(cur);
             }
             cur.chunks.add(c);
+            if (!c.mono) {
+                cur.mono = false; // 行内混入非等宽 chunk 即不算等宽行
+            }
             if (c.size > cur.size) { cur.size = c.size; cur.bold = c.bold; }
             cur.x = Math.min(cur.x, c.x);
         }
@@ -234,7 +282,7 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
                 if (prev != null && sb.length() > 0) {
                     float gap = c.x - (prev.x + prev.text.length() * prev.size * 0.55f);
                     boolean latin = isLatinTail(sb) && isLatinHead(c.text);
-                    if (gap > prev.size * 0.22f && latin) {
+                    if (latin && shouldInsertSpace(gap, prev.size, gapFactor)) {
                         sb.append(' ');
                     }
                 }
@@ -244,6 +292,11 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
             l.text = sb.toString();
         }
         return lines;
+    }
+
+    /** 中英字间判定：净间隙 > 前一 chunk 字号 × 系数 时视为词间空格。 */
+    static boolean shouldInsertSpace(float gap, float size, float factor) {
+        return gap > size * factor;
     }
 
     private static boolean isLatinTail(StringBuilder sb) {
@@ -339,7 +392,7 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
      * 封面艺术字检测：最大字号构成 ≥2 行的连续 run，且比次大 distinct 字号大 50% 以上。
      * 返回该字号；无则返回 -1。
      */
-    private static float coverRunSize(List<Line> lines) {
+    private static float coverRunSize(List<Line> lines, PdfExtractionProperties props) {
         List<Float> distinct = new ArrayList<Float>();
         for (Line l : lines) {
             Float q = Float.valueOf(qsize(l.size));
@@ -361,27 +414,27 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
         if (maxRun < 2) return -1f;
         if (distinct.size() < 2) return -1f;
         float next = distinct.get(1);
-        return largest > next * 1.5f ? largest : -1f;
+        return largest > next * (props == null ? 1.5f : (float) props.coverRatio) ? largest : -1f;
     }
 
     /** 候选标题字号（降序，最多 3 档）：超出档位的大字降为正文。 */
-    private static List<Float> headingSizes(List<Line> lines, float bodySize) {
+    private static List<Float> headingSizes(List<Line> lines, float bodySize, float headFactor, int maxTiers) {
         List<Float> sizes = new ArrayList<Float>();
         for (Line l : lines) {
             float q = qsize(l.size);
-            if (l.size >= bodySize * HEAD_FACTOR && !sizes.contains(Float.valueOf(q))) {
+            if (l.size >= bodySize * headFactor && !sizes.contains(Float.valueOf(q))) {
                 sizes.add(Float.valueOf(q));
             }
         }
         Collections.sort(sizes, Collections.reverseOrder());
-        if (sizes.size() > 3) {
-            sizes = new ArrayList<Float>(sizes.subList(0, 3));
+        if (sizes.size() > maxTiers) {
+            sizes = new ArrayList<Float>(sizes.subList(0, maxTiers));
         }
         return sizes;
     }
 
-    private static int headingLevel(List<Line> lines, int idx, float bodySize) {
-        List<Float> sizes = headingSizes(lines, bodySize);
+    private static int headingLevel(List<Line> lines, int idx, float bodySize, float headFactor, int maxTiers) {
+        List<Float> sizes = headingSizes(lines, bodySize, headFactor, maxTiers);
         int lv = sizes.indexOf(Float.valueOf(qsize(lines.get(idx).size))) + 1;
         return Math.max(1, Math.min(6, lv));
     }
@@ -392,12 +445,50 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
         return null;
     }
 
+    /** 从 start 起连续等宽行的长度（行距突变即截断；不足 3 行由调用方判为非代码块）。 */
+    private static int codeBlockLength(List<Line> lines, int start) {
+        int n = lines.size();
+        if (start >= n || !lines.get(start).mono) return 0;
+        float gap = -1f;
+        int len = 1;
+        for (int i = start + 1; i < n && lines.get(i).mono; i++) {
+            float g = lines.get(i - 1).y - lines.get(i).y;
+            if (g <= 0f) break;
+            if (gap >= 0f && Math.abs(g - gap) > Math.max(2f, lines.get(start).size * 0.35f)) {
+                break;
+            }
+            gap = g;
+            len++;
+        }
+        return len;
+    }
+
     private static int markerLen(String text) {
         java.util.regex.Matcher m = UNORDERED.matcher(text);
         if (m.find()) return m.end();
         m = ORDERED.matcher(text);
         if (m.find()) return m.end();
         return 0;
+    }
+
+    /**
+     * 嵌套列表层级推断（维护各层级 x 起点，返回该行应处的层级下标）：
+     * 行 x 起点 ≥ 当前级起点 +12pt → 下钻子级；明显左移（>6pt）→ 回退上级；同级容差内沿用。
+     */
+    private static int nestedListLevel(List<Float> levelXs, float x) {
+        while (!levelXs.isEmpty() && x < levelXs.get(levelXs.size() - 1).floatValue() - 6f) {
+            levelXs.remove(levelXs.size() - 1);
+        }
+        if (levelXs.isEmpty()) {
+            levelXs.add(Float.valueOf(x));
+            return 0;
+        }
+        float top = levelXs.get(levelXs.size() - 1).floatValue();
+        if (x >= top + 12f) {
+            levelXs.add(Float.valueOf(x));
+            return levelXs.size() - 1;
+        }
+        return levelXs.size() - 1;
     }
 
     // ---------------- 流式表格（无格线，x 对齐） ----------------
@@ -471,6 +562,90 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
 
     // ---------------- Tier1 lattice（沿用） ----------------
 
+    /** Tier1 表格 + 跨页续接所需元数据（构建期收集，bodySize 就绪后统一裁决）。 */
+    private static final class Tier1Table {
+        final DocumentTable table;
+        final int pageNo;
+        final int nCols;
+        final float leftX, lastColX; // 首列线 / 末列起点线（自动宽度下外框可能随内容微差）
+        final boolean firstRowBold;   // 首行存在 bold chunk → 有独立表头证据
+        final float firstRowMaxSize;  // 首行最大字号
+
+        Tier1Table(DocumentTable table, int pageNo, TableRegion r,
+                boolean firstRowBold, float firstRowMaxSize) {
+            this.table = table;
+            this.pageNo = pageNo;
+            this.nCols = r.colXs.size() - 1;
+            this.leftX = r.colXs.get(0).floatValue();
+            this.lastColX = r.colXs.get(r.colXs.size() - 2).floatValue();
+            this.firstRowBold = firstRowBold;
+            this.firstRowMaxSize = firstRowMaxSize;
+        }
+    }
+
+    /** 构建格线表并附带首行表头证据（bold / 最大字号）与几何元数据。 */
+    private static Tier1Table buildTier1Table(int pageNo, PageModel page, TableRegion r) {
+        DocumentTable tbl = buildTable(page, r);
+        if (tbl == null) {
+            return null;
+        }
+        boolean bold = false;
+        float maxSize = 0f;
+        float top = r.rowYs.get(r.rowYs.size() - 1).floatValue();
+        float bottom = r.rowYs.get(r.rowYs.size() - 2).floatValue();
+        for (PageChunk c : page.chunks) {
+            if (c.x >= r.x1 && c.x <= r.x2 && c.y > bottom && c.y <= top) {
+                if (c.bold) {
+                    bold = true;
+                }
+                if (c.size > maxSize) {
+                    maxSize = c.size;
+                }
+            }
+        }
+        return new Tier1Table(tbl, pageNo, r, bold, maxSize);
+    }
+
+    /**
+     * 跨页表格续接：相邻两页各自检出的同构格线表满足续接条件时合并为一张——
+     * 第二张无独立表头证据（首行非 bold 且字号=正文）、列数相同、
+     * 首末列 x 对齐 ±6pt；续表的首行不作为 headers（并入 rows）。
+     */
+    private static List<DocumentTable> mergeContinuedTables(List<Tier1Table> tables, float bodySize) {
+        List<DocumentTable> out = new ArrayList<DocumentTable>();
+        Tier1Table last = null;
+        DocumentTable acc = null;
+        for (Tier1Table cur : tables) {
+            if (canContinue(last, cur, bodySize)) {
+                acc.rows.addAll(cur.table.headers);
+                acc.rows.addAll(cur.table.rows);
+            } else {
+                out.add(cur.table);
+                acc = cur.table;
+            }
+            last = cur;
+        }
+        return out;
+    }
+
+    private static boolean canContinue(Tier1Table a, Tier1Table b, float bodySize) {
+        return a != null && b != null
+                && b.pageNo == a.pageNo + 1
+                && a.nCols == b.nCols
+                && Math.abs(a.leftX - b.leftX) <= 6f
+                && Math.abs(a.lastColX - b.lastColX) <= 6f
+                && !b.firstRowBold
+                && Math.abs(b.firstRowMaxSize - bodySize) <= 0.5f;
+    }
+
+    private static final float GRID_TOL = 2.5f; // 与 LatticeTableFinder 聚类容差一致
+
+    /**
+     * 格线表 → 表模型：以“列×行带的视觉单元组”表达合并单元格语义（Task W1-2）。
+     * 相邻行带之间某列 x 范围内无横向分隔线 → 两带同属一个纵向合并格（rowspan）：
+     * 值落组内首带，余带空串占位；横向合并格（colspan）中跨列宽文本由 cellContent
+     * 的窗口归属自然落入首个覆盖列，其余列空串占位——GFM 列数始终对齐保形。
+     */
     private static DocumentTable buildTable(PageModel page, TableRegion r) {
         DocumentTable tbl = new DocumentTable();
         int nCols = r.colXs.size() - 1;
@@ -478,16 +653,44 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
         if (nCols < 1 || nRows < 1) {
             return null;
         }
-        for (int row = nRows - 1; row >= 0; row--) {
-            float top = r.rowYs.get(row + 1).floatValue();
-            float bottom = r.rowYs.get(row).floatValue();
+        // 每列：行带 → 视觉单元组编号（band 0 = 最上行）
+        int[][] groupOfBand = new int[nCols][];
+        for (int col = 0; col < nCols; col++) {
+            float left = r.colXs.get(col).floatValue();
+            float right = r.colXs.get(col + 1).floatValue();
+            int[] groups = new int[nRows];
+            int g = 0;
+            for (int band = 0; band < nRows; band++) {
+                if (band > 0 && dividerPresent(page, left, right,
+                        r.rowYs.get(nRows - band).floatValue())) {
+                    g++;
+                }
+                groups[band] = g;
+            }
+            groupOfBand[col] = groups;
+        }
+        for (int band = 0; band < nRows; band++) {
             List<String> cells = new ArrayList<String>();
             for (int col = 0; col < nCols; col++) {
                 float left = r.colXs.get(col).floatValue();
                 float right = r.colXs.get(col + 1).floatValue();
-                cells.add(cellContent(page, left, right, bottom, top));
+                boolean mergedAbove = band > 0
+                        && groupOfBand[col][band] == groupOfBand[col][band - 1];
+                if (mergedAbove) {
+                    cells.add(""); // 纵向合并格余行：空占位保持列形
+                    continue;
+                }
+                float top = r.rowYs.get(nRows - band).floatValue();
+                float bottom = r.rowYs.get(nRows - band - 1).floatValue();
+                int endBand = band;
+                while (endBand + 1 < nRows
+                        && groupOfBand[col][endBand + 1] == groupOfBand[col][band]) {
+                    endBand++;
+                }
+                float groupBottom = r.rowYs.get(nRows - endBand - 1).floatValue();
+                cells.add(cellContent(page, left, right, groupBottom, top));
             }
-            if (row == nRows - 1) {
+            if (band == 0) {
                 tbl.headers.add(cells);
             } else {
                 tbl.rows.add(cells);
@@ -496,6 +699,25 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
         return tbl;
     }
 
+    /** 边界 y 处该列 x 范围是否存在横向分隔线（缺失即判定为纵向合并格）。 */
+    private static boolean dividerPresent(PageModel page, float left, float right, float y) {
+        for (RawStroke s : page.strokes) {
+            if (!s.horizontal()) {
+                continue;
+            }
+            if (Math.abs((s.y1 + s.y2) / 2f - y) > GRID_TOL) {
+                continue;
+            }
+            float sx = Math.min(s.x1, s.x2);
+            float ex = Math.max(s.x1, s.x2);
+            if (sx <= left + 3f && ex >= right - 3f) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** 单元格内容：按视觉顺序（y 自上而下、同行 x 升序）拼接文本与图片标记。 */
     private static String cellContent(PageModel page, float left, float right, float bottom, float top) {
         List<PageChunk> inCell = new ArrayList<PageChunk>();
         for (PageChunk c : page.chunks) {
@@ -504,11 +726,22 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
             }
         }
         Collections.sort(inCell, new Comparator<PageChunk>() {
-            @Override public int compare(PageChunk a, PageChunk b) { return Float.compare(a.x, b.x); }
+            @Override public int compare(PageChunk a, PageChunk b) {
+                if (Math.abs(a.y - b.y) > 0.5f) {
+                    return Float.compare(b.y, a.y); // 多行单元格自上而下
+                }
+                return Float.compare(a.x, b.x);
+            }
         });
         StringBuilder sb = new StringBuilder();
+        PageChunk prev = null;
         for (PageChunk c : inCell) {
+            if (prev != null && Math.abs(prev.y - c.y) > prev.size * 0.5f
+                    && isLatinTail(sb) && isLatinHead(c.text)) {
+                sb.append(' '); // 仅拉丁词间换行补空格，CJK 直接相连
+            }
             sb.append(c.text.trim());
+            prev = c;
         }
         for (RawImage img : page.images) {
             if (img.x >= left && img.x < right && img.y > bottom && img.y <= top && img.bytes.length > 0) {

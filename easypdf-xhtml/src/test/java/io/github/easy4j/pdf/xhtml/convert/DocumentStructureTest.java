@@ -66,4 +66,47 @@ class DocumentStructureTest {
         doc.sections = Collections.singletonList(h1);
         assertThat(doc.fullMarkdown()).contains("# 文档元标题").contains("# 章标题");
     }
+
+    @Test
+    void adjacentDuplicateEmptySectionsCollapseToOne() {
+        // 两个同名 level-1 空段相邻，只输出一次（W3-2：去重扩展到任意相邻重复）
+        DocumentStructure doc = new DocumentStructure();
+        DocumentSection s1 = new DocumentSection();
+        s1.title = "附录"; s1.level = 1; // content 为空
+        DocumentSection s2 = new DocumentSection();
+        s2.title = "附录"; s2.level = 1; // content 为空
+        doc.sections = Arrays.asList(s1, s2);
+        String md = doc.toMarkdown();
+        assertThat(md.indexOf("# 附录")).isEqualTo(md.lastIndexOf("# 附录"));
+    }
+
+    @Test
+    void adjacentDuplicateNestedEmptyChildrenCollapseToo() {
+        // 嵌套子级同样应用相邻去重
+        DocumentSection parent = new DocumentSection();
+        parent.title = "卷一"; parent.level = 1;
+        DocumentSection c1 = new DocumentSection();
+        c1.title = "附录"; c1.level = 2;
+        DocumentSection c2 = new DocumentSection();
+        c2.title = "附录"; c2.level = 2;
+        parent.children = Arrays.asList(c1, c2);
+        DocumentStructure doc = new DocumentStructure();
+        doc.sections = Collections.singletonList(parent);
+        String md = doc.toMarkdown();
+        assertThat(md.indexOf("## 附录")).isEqualTo(md.lastIndexOf("## 附录"));
+    }
+
+    @Test
+    void duplicateTitleWithContentIsNotDropped() {
+        // 同名但后段携带内容的相邻段不去重（防误删真实内容）
+        DocumentStructure doc = new DocumentStructure();
+        DocumentSection s1 = new DocumentSection();
+        s1.title = "术语表"; s1.level = 1; s1.content = "";
+        DocumentSection s2 = new DocumentSection();
+        s2.title = "术语表"; s2.level = 1; s2.content = "PDF：便携式文档格式";
+        doc.sections = Arrays.asList(s1, s2);
+        String md = doc.toMarkdown();
+        assertThat(md).contains("PDF：便携式文档格式");
+        assertThat(md.indexOf("# 术语表")).isNotEqualTo(md.lastIndexOf("# 术语表"));
+    }
 }

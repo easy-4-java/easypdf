@@ -75,7 +75,7 @@
         <javax.mail-api.version>1.6.2</javax.mail-api.version>
         <jetbrick.version>2.1.10</jetbrick.version>
         <jsoup.version>1.18.3</jsoup.version>
-        <flexmark.version>0.64.8</flexmark.version>
+        <flexmark.version>0.62.2</flexmark.version>
         <junit-jupiter.version>5.11.4</junit-jupiter.version>
         <junit.version>4.13.2</junit.version>
         <assertj.version>3.27.7</assertj.version>

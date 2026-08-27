@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>io.github.easy4j</groupId>
+        <artifactId>easypdf</artifactId>
+        <version>1.0.x.20260630-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>easypdf-it</artifactId>
+    <description>End-to-end integration tests: PDF→Markdown contract, html2pdf render,
+        Spring MVC view layer. Runs via maven-failsafe-plugin (not surefire).</description>
+    <name>${project.groupId}:${project.artifactId}</name>
+    <packaging>jar</packaging>
+
+    <properties>
+        <!-- IT 类不会作为主 jar 的一部分分发；保留 jar 包装便于 mvn install -DskipITs -->
+        <maven.install.skip>${maven.test.skip}</maven.install.skip>
+    </properties>
+
+    <dependencies>
+        <!-- 主 API 面（PDF→Markdown / DocumentChunker / ExtractReport） -->
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>easypdf-xhtml</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- 模板引擎 → PDF 渲染 -->
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>easypdf-beetl</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>easypdf-freemarker</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>easypdf-thymeleaf</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- Spring MVC 视图层端到端 -->
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>easypdf-webmvc</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>easypdf-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- 3.0.x 上 webmvc 已迁 jakarta；webmvc 自己把 servlet-api 标 provided
+             所以 IT 模块需要显式补上才能编译/测试 servlet 包 import。
+             2.0.x / 1.0.x 分支删除此依赖（webmvc 用 javax.servlet-api，
+             且 webmvc IT 已删除）。-->
+
+        <!-- Test runtime -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Mock servlet for WebMVC IT（不引入完整 Spring 容器，跑得更快） -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-test</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-webmvc</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- Failsafe 跑 *IT.java，绑到 verify 阶段 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>${maven-failsafe-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- IT 不参与 JaCoCo 90% 门（合约测试覆盖率独立） -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+
+            <!-- 默认跳过主 jar 打包（IT 模块无 main 代码） -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <skipIfEmpty>true</skipIfEmpty>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

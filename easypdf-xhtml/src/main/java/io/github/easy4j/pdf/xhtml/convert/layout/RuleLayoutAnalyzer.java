@@ -56,7 +56,7 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
 
         // 1) 每页：格线表格（含单元格图片）+ 表格外 chunks 进入分栏/行流水线
         List<Line> allLines = new ArrayList<Line>();
-        List<DocumentTable> tables = new ArrayList<DocumentTable>();
+        List<Tier1Table> tier1Tables = new ArrayList<Tier1Table>();
         List<DocumentTable> streamTables = new ArrayList<DocumentTable>();
         List<String> looseImages = new ArrayList<String>();
         if (pages != null) {
@@ -64,9 +64,9 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
                 List<TableRegion> regions = tableFinder.find(page);
                 List<PageChunk> flowChunks = new ArrayList<PageChunk>(page.chunks);
                 for (TableRegion r : regions) {
-                    DocumentTable tbl = buildTable(page, r);
-                    if (tbl != null) {
-                        tables.add(tbl);
+                    Tier1Table tt = buildTier1Table(page.pageNo, page, r);
+                    if (tt != null) {
+                        tier1Tables.add(tt);
                         removeInside(flowChunks, r);
                     }
                 }
@@ -157,7 +157,7 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
             sections.add(current);
         }
         doc.sections = sections;
-        doc.tables.addAll(tables);
+        doc.tables.addAll(mergeContinuedTables(tier1Tables, bodySize));
         doc.tables.addAll(streamTables);
         StringBuilder sec;
         for (String uri : looseImages) {
@@ -470,6 +470,82 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
     }
 
     // ---------------- Tier1 lattice（沿用） ----------------
+
+    /** Tier1 表格 + 跨页续接所需元数据（构建期收集，bodySize 就绪后统一裁决）。 */
+    private static final class Tier1Table {
+        final DocumentTable table;
+        final int pageNo;
+        final int nCols;
+        final float leftX, lastColX; // 首列线 / 末列起点线（自动宽度下外框可能随内容微差）
+        final boolean firstRowBold;   // 首行存在 bold chunk → 有独立表头证据
+        final float firstRowMaxSize;  // 首行最大字号
+
+        Tier1Table(DocumentTable table, int pageNo, TableRegion r,
+                boolean firstRowBold, float firstRowMaxSize) {
+            this.table = table;
+            this.pageNo = pageNo;
+            this.nCols = r.colXs.size() - 1;
+            this.leftX = r.colXs.get(0).floatValue();
+            this.lastColX = r.colXs.get(r.colXs.size() - 2).floatValue();
+            this.firstRowBold = firstRowBold;
+            this.firstRowMaxSize = firstRowMaxSize;
+        }
+    }
+
+    /** 构建格线表并附带首行表头证据（bold / 最大字号）与几何元数据。 */
+    private static Tier1Table buildTier1Table(int pageNo, PageModel page, TableRegion r) {
+        DocumentTable tbl = buildTable(page, r);
+        if (tbl == null) {
+            return null;
+        }
+        boolean bold = false;
+        float maxSize = 0f;
+        float top = r.rowYs.get(r.rowYs.size() - 1).floatValue();
+        float bottom = r.rowYs.get(r.rowYs.size() - 2).floatValue();
+        for (PageChunk c : page.chunks) {
+            if (c.x >= r.x1 && c.x <= r.x2 && c.y > bottom && c.y <= top) {
+                if (c.bold) {
+                    bold = true;
+                }
+                if (c.size > maxSize) {
+                    maxSize = c.size;
+                }
+            }
+        }
+        return new Tier1Table(tbl, pageNo, r, bold, maxSize);
+    }
+
+    /**
+     * 跨页表格续接：相邻两页各自检出的同构格线表满足续接条件时合并为一张——
+     * 第二张无独立表头证据（首行非 bold 且字号=正文）、列数相同、
+     * 首末列 x 对齐 ±6pt；续表的首行不作为 headers（并入 rows）。
+     */
+    private static List<DocumentTable> mergeContinuedTables(List<Tier1Table> tables, float bodySize) {
+        List<DocumentTable> out = new ArrayList<DocumentTable>();
+        Tier1Table last = null;
+        DocumentTable acc = null;
+        for (Tier1Table cur : tables) {
+            if (canContinue(last, cur, bodySize)) {
+                acc.rows.addAll(cur.table.headers);
+                acc.rows.addAll(cur.table.rows);
+            } else {
+                out.add(cur.table);
+                acc = cur.table;
+            }
+            last = cur;
+        }
+        return out;
+    }
+
+    private static boolean canContinue(Tier1Table a, Tier1Table b, float bodySize) {
+        return a != null && b != null
+                && b.pageNo == a.pageNo + 1
+                && a.nCols == b.nCols
+                && Math.abs(a.leftX - b.leftX) <= 6f
+                && Math.abs(a.lastColX - b.lastColX) <= 6f
+                && !b.firstRowBold
+                && Math.abs(b.firstRowMaxSize - bodySize) <= 0.5f;
+    }
 
     private static DocumentTable buildTable(PageModel page, TableRegion r) {
         DocumentTable tbl = new DocumentTable();

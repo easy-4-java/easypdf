@@ -3,6 +3,8 @@ package io.github.easy4j.pdf.xhtml.convert;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.github.easy4j.pdf.xhtml.convert.layout.PdfExtractionProperties;
+
 public final class DocumentStructure {
     public String title;
     public List<DocumentSection> sections = new ArrayList<DocumentSection>();
@@ -27,6 +29,20 @@ public final class DocumentStructure {
         return sb.toString().trim();
     }
 
+    /**
+     * 按配置属性序列化 Markdown。当前仅委托 {@link #toMarkdown()}，
+     * {@code props} 预留给 3.3 颜色渲染任务——届时
+     * {@link PdfExtractionProperties#renderHtmlColor} 为 {@code true} 时
+     * 会在文本节点包裹 {@code <span style="color:...">} 并经
+     * {@link HtmlEscaper#escape(String)} 转义特殊字符。
+     *
+     * @param props 提取配置，可为 {@code null}（等价于默认配置）
+     */
+    public String toMarkdown(PdfExtractionProperties props) {
+        // 3.3 完成前：行为与无参版本完全一致（renderHtmlColor 默认 false，无颜色采集）
+        return toMarkdown();
+    }
+
     public String fullMarkdown() {
         StringBuilder sb = new StringBuilder();
         boolean dedup = title != null && !title.isEmpty()
@@ -38,6 +54,17 @@ public final class DocumentStructure {
         }
         sb.append(toMarkdown());
         return sb.toString();
+    }
+
+    /**
+     * 按配置属性序列化完整 Markdown（含文档标题）。当前仅委托 {@link #fullMarkdown()}，
+     * {@code props} 预留给 3.3 颜色渲染任务。
+     *
+     * @param props 提取配置，可为 {@code null}（等价于默认配置）
+     */
+    public String fullMarkdown(PdfExtractionProperties props) {
+        // 3.3 完成前：行为与无参版本完全一致
+        return fullMarkdown();
     }
 
     /**

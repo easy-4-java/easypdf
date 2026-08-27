@@ -6,7 +6,7 @@
 	<parent>
 		<groupId>io.github.easy4j</groupId>
 		<artifactId>easypdf</artifactId>
-		<version>1.0.x.20260630</version>
+		<version>1.0.x.20260730-SNAPSHOT</version>
 	</parent>
 	
 	<artifactId>easypdf-velocity</artifactId>

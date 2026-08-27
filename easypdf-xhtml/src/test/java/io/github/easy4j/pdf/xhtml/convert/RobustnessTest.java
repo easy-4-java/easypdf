@@ -91,9 +91,10 @@ class RobustnessTest {
         final List<Integer> pageNos = new ArrayList<Integer>();
         final List<DocumentStructure> partials = new ArrayList<DocumentStructure>();
         PdfStructureExtractor.extractPerPage(pdf, null, new PdfStructureExtractor.PageConsumer() {
-            @Override public void page(int pageNo, DocumentStructure pagePartial) {
+            @Override public boolean page(int pageNo, DocumentStructure pagePartial) {
                 pageNos.add(Integer.valueOf(pageNo));
                 partials.add(pagePartial);
+                return true;
             }
         });
 
@@ -118,9 +119,10 @@ class RobustnessTest {
         final List<Integer> pageNos = new ArrayList<Integer>();
         final List<String> texts = new ArrayList<String>();
         PdfStructureExtractor.extractPerPage(pdf, null, new PdfStructureExtractor.PageConsumer() {
-            @Override public void page(int pageNo, DocumentStructure pagePartial) {
+            @Override public boolean page(int pageNo, DocumentStructure pagePartial) {
                 pageNos.add(Integer.valueOf(pageNo));
                 texts.add(pagePartial.fullMarkdown());
+                return true;
             }
         });
         assertThat(pageNos).containsExactly(1);
@@ -332,5 +334,29 @@ class RobustnessTest {
         assertThat(RestLayoutAnalyzer.backoffMillis(1)).isEqualTo(1000L);
         assertThat(RestLayoutAnalyzer.backoffMillis(2)).isEqualTo(2000L);
         assertThat(RestLayoutAnalyzer.backoffMillis(7)).isEqualTo(8000L); // 封顶防移位溢出
+    }
+
+    @Test
+    void cancelStopsPerPageStreaming(@org.junit.jupiter.api.io.TempDir java.io.File dir) throws Exception {
+        org.junit.jupiter.api.Assertions.assertTrue(dir.isDirectory());
+        // 3 页文档：回调在第 2 页后返回 false，第 3 页不应被消费
+        String html = "<html><body>"
+            + "<p>第一页内容标记。</p>"
+            + "<p style='page-break-before:always'>第二页内容标记。</p>"
+            + "<p style='page-break-before:always'>第三页内容标记。</p>"
+            + "</body></html>";
+        java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+        io.github.easy4j.pdf.core.convert.HtmlPdfConverter.htmlToPdf(html, out);
+        java.io.File pdf = new java.io.File(dir, "cancel.pdf");
+        java.nio.file.Files.write(pdf.toPath(), out.toByteArray());
+
+        final java.util.List<Integer> seen = new java.util.ArrayList<Integer>();
+        PdfStructureExtractor.extractPerPage(pdf, null, new PdfStructureExtractor.PageConsumer() {
+            @Override public boolean page(int pageNo, DocumentStructure pagePartial) {
+                seen.add(Integer.valueOf(pageNo));
+                return pageNo < 2; // 第 2 页后取消
+            }
+        });
+        assertThat(seen).containsExactly(1, 2); // 第 3 页未回调
     }
 }

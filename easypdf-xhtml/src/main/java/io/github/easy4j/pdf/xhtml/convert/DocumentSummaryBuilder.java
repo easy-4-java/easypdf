@@ -23,10 +23,10 @@ public final class DocumentSummaryBuilder {
         DocumentSummary sum = new DocumentSummary();
         PdfStructureExtractor.extractPerPage(pdf, p, new PdfStructureExtractor.PageConsumer() {
             @Override
-            public void page(int pageNo, DocumentStructure partial) {
+            public boolean page(int pageNo, DocumentStructure partial) {
                 sum.totalPages = Math.max(sum.totalPages, pageNo);
                 if (partial == null) {
-                    return;
+                    return true;
                 }
                 // 文档标题兜底：取首页回调的元标题（末尾若存在 level-1 章节标题则被覆盖为更精确值）
                 if (sum.title == null && pageNo <= 1) {
@@ -48,6 +48,7 @@ public final class DocumentSummaryBuilder {
                 if (partial.images != null) {
                     sum.totalImages += partial.images.size();
                 }
+                return true;
             }
         });
         // 文档标题：取首个 level-1 章节标题（比文件名/元数据更精确）

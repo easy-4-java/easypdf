@@ -126,14 +126,15 @@ public final class EasyPdf {
         PdfStructureExtractor.extractPerPage(pdf, PdfExtractionProperties.defaults(),
                 new PdfStructureExtractor.PageConsumer() {
                     @Override
-                    public void page(int pageNo, DocumentStructure partial) {
+                    public boolean page(int pageNo, DocumentStructure partial) {
                         if (partial == null || pageNo < fromPage || pageNo > toPage) {
-                            return;
+                            return true;
                         }
                         if (md.length() > 0) {
                             md.append("\n\n");
                         }
                         md.append(partial.toMarkdown());
+                        return true;
                     }
                 });
         return md.toString();

@@ -67,7 +67,10 @@ public final class PdfStructureExtractor {
 
     /** 每页回调一次：pageNo 从 1 起；REST 引擎产出整篇结果时以 pageNo=0 单次回调。 */
     public interface PageConsumer {
-        void page(int pageNo, DocumentStructure pagePartial);
+        /**
+         * @return true 继续消费后续页；false 中断流式提取（后续页不再回调）。
+         */
+        boolean page(int pageNo, DocumentStructure pagePartial);
     }
 
     /**
@@ -114,7 +117,9 @@ public final class PdfStructureExtractor {
             for (PageModel m : pd.models) {
                 DocumentStructure part = analyzer.analyze(Collections.singletonList(m), null, pd.title);
                 markSections(part.sections, m.pageNo);
-                consumer.page(m.pageNo, part);
+                if (!consumer.page(m.pageNo, part)) {
+                    break;
+                }
             }
         }
     }
@@ -133,7 +138,9 @@ public final class PdfStructureExtractor {
                 walk(child, null, part, ctx);
             }
             markSections(part.sections, p);
-            consumer.page(p, part);
+            if (!consumer.page(p, part)) {
+                break;
+            }
         }
     }
 

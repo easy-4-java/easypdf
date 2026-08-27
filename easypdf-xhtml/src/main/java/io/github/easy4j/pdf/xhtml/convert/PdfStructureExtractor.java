@@ -3,6 +3,7 @@ package io.github.easy4j.pdf.xhtml.convert;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,46 +40,186 @@ public final class PdfStructureExtractor {
 
     public static DocumentStructure extract(File pdf, PdfExtractionProperties props) throws IOException {
         Objects.requireNonNull(pdf, "pdf must not be null");
-        if (props == null) {
-            props = PdfExtractionProperties.defaults();
-        }
         if (!pdf.isFile()) {
             throw new IOException("PDF not found: " + pdf.getAbsolutePath());
         }
-        DocumentStructure doc = new DocumentStructure();
-        try (PdfDocument pdfDoc = new PdfDocument(new PdfReader(pdf))) {
-            String metaTitle = pdfDoc.getDocumentInfo() != null ? pdfDoc.getDocumentInfo().getTitle() : null;
-            doc.title = (metaTitle == null || metaTitle.isEmpty()) ? pdf.getName() : metaTitle;
+        try (ParsedDoc pd = new ParsedDoc(pdf)) {
+            return extractAll(pd, props);
+        }
+    }
 
-            List<PageModel> models = PageModelListener.collect(pdfDoc);
-            PdfStructTreeRoot root = pdfDoc.getStructTreeRoot();
-            boolean tagged = false;
-            if (root != null && root.getKids() != null) {
-                for (IStructureNode n : root.getKids()) {
-                    if (n instanceof PdfStructElem) { tagged = true; break; }
+    // ---------------- 页级流式提取（大文件不再全量驻留） ----------------
+
+    /** 每页回调一次：pageNo 从 1 起；REST 引擎产出整篇结果时以 pageNo=0 单次回调。 */
+    public interface PageConsumer {
+        void page(int pageNo, DocumentStructure pagePartial);
+    }
+
+    /**
+     * 页级流式提取：逐页产出 partial {@link DocumentStructure}（title 继承文档标题，
+     * sections/tables/images 为当页产物），消费方自行聚合——解析期间只驻留单页结果。
+     *
+     * <p>每页独立分析（无跨页统计），因此页眉剔除、跨页断词合并与全局字号聚类
+     * 不适用；需要全局语义时使用 {@link #extract(File, PdfExtractionProperties)}。
+     * 聚合可借助包级方法 {@link #aggregate(List)}（把后续页的隐式继承段并入上一节）。
+     */
+    public static void extractPerPage(File pdf, PdfExtractionProperties props, PageConsumer consumer)
+            throws IOException {
+        Objects.requireNonNull(pdf, "pdf must not be null");
+        Objects.requireNonNull(consumer, "consumer must not be null");
+        if (!pdf.isFile()) {
+            throw new IOException("PDF not found: " + pdf.getAbsolutePath());
+        }
+        try (ParsedDoc pd = new ParsedDoc(pdf)) {
+            PdfExtractionProperties p = props != null ? props : PdfExtractionProperties.defaults();
+            if (pd.tagged) {
+                emitTaggedPerPage(pd, consumer);
+                return;
+            }
+            boolean wantsRest = p.engine == PdfExtractionProperties.Engine.REST
+                    || (p.engine == PdfExtractionProperties.Engine.AUTO && p.restEndpoint != null);
+            if (wantsRest) {
+                try {
+                    // REST 布局服务以整份字节为输入，无法按页切分：整篇结果一次回调（pageNo=0）
+                    DocumentStructure rest = new RestLayoutAnalyzer(p)
+                            .analyze(java.nio.file.Files.readAllBytes(pd.source.toPath()), pd.title);
+                    consumer.page(0, rest);
+                    return;
+                } catch (IOException e) {
+                    if (p.engine == PdfExtractionProperties.Engine.REST) {
+                        throw e;
+                    }
+                    org.slf4j.LoggerFactory.getLogger(PdfStructureExtractor.class)
+                            .warn("REST layout analyzer failed, fallback to RULE: {}", e.getMessage());
                 }
             }
-            if (tagged) {
-                extractTaggedMcid(doc, pdfDoc, root, models);
+            RuleLayoutAnalyzer analyzer = new RuleLayoutAnalyzer();
+            for (PageModel m : pd.models) {
+                consumer.page(m.pageNo,
+                        analyzer.analyze(Collections.singletonList(m), null, pd.title));
             }
-            if (doc.sections.isEmpty() && doc.tables.isEmpty()) {
-                // 非 Tagged：按引擎选择走 LayoutAnalyzer（REST 优先可回退 RULE，默认 RULE）
-                boolean wantsRest = props.engine == PdfExtractionProperties.Engine.REST
-                        || (props.engine == PdfExtractionProperties.Engine.AUTO && props.restEndpoint != null);
-                if (wantsRest) {
-                    try {
-                        return new RestLayoutAnalyzer(props)
-                                .analyze(java.nio.file.Files.readAllBytes(pdf.toPath()), doc.title);
-                    } catch (IOException e) {
-                        if (props.engine == PdfExtractionProperties.Engine.REST) {
-                            throw e;
-                        }
-                        org.slf4j.LoggerFactory.getLogger(PdfStructureExtractor.class)
-                                .warn("REST layout analyzer failed, fallback to RULE: {}", e.getMessage());
+        }
+    }
+
+    /** Tagged 逐页：按页过滤 mcid 文本索引后走同一 walk，本页无内容的元素自然为空被跳过。 */
+    private static void emitTaggedPerPage(ParsedDoc pd, PageConsumer consumer) {
+        Map<String, StringBuilder> idx = buildMcidIndex(pd.models);
+        List<IStructureNode> kids = pd.pdfDoc.getStructTreeRoot().getKids();
+        for (int p = 1; p <= pd.pdfDoc.getNumberOfPages(); p++) {
+            Map<PdfDictionary, Integer> pageNums = new HashMap<PdfDictionary, Integer>();
+            pageNums.put(pd.pdfDoc.getPage(p).getPdfObject(), Integer.valueOf(p));
+            Ctx ctx = new Ctx(filterIndexForPage(idx, p), pageNums, true);
+            DocumentStructure part = new DocumentStructure();
+            part.title = pd.title;
+            for (IStructureNode child : kids) {
+                walk(child, null, part, ctx);
+            }
+            consumer.page(p, part);
+        }
+    }
+
+    /**
+     * 将 {@link #extractPerPage} 的各页 partial 聚合为整篇结构。
+     * 后续部分的首个"隐式继承段"（level==1、无子内容，标题等于文档标题或为空）
+     * 视为跨页续流：内容并入上一节而非新建重复段——与全篇分析中 current 段持续追加的形态一致。
+     * 包级可见以便单测。
+     */
+    static DocumentStructure aggregate(List<DocumentStructure> parts) {
+        DocumentStructure agg = new DocumentStructure();
+        if (parts == null || parts.isEmpty()) return agg;
+        agg.title = parts.get(0).title;
+        for (int k = 0; k < parts.size(); k++) {
+            DocumentStructure part = parts.get(k);
+            List<DocumentSection> secs = part.sections;
+            int start = 0;
+            if (k > 0 && secs != null && !secs.isEmpty() && isImplicitLead(secs.get(0), agg.title)) {
+                DocumentSection lead = secs.get(0);
+                start = 1;
+                if (lead.content != null && !lead.content.isEmpty()) {
+                    if (agg.sections.isEmpty()) {
+                        agg.sections.add(lead);
+                    } else {
+                        DocumentSection tail = agg.sections.get(agg.sections.size() - 1);
+                        tail.content = tail.content == null || tail.content.isEmpty()
+                                ? lead.content
+                                : tail.content + "\n\n" + lead.content;
                     }
                 }
-                doc = new RuleLayoutAnalyzer().analyze(models, null, doc.title);
             }
+            for (int i = start; i < secs.size(); i++) {
+                agg.sections.add(secs.get(i));
+            }
+            agg.tables.addAll(part.tables);
+            agg.images.addAll(part.images);
+        }
+        return agg;
+    }
+
+    private static boolean isImplicitLead(DocumentSection s, String docTitle) {
+        if (s.level != 1) return false;
+        if (!(s.children.isEmpty() && s.tables.isEmpty() && s.images.isEmpty())) return false;
+        String t = s.title == null ? "" : s.title.trim();
+        if (t.isEmpty()) return true;
+        return docTitle != null && docTitle.equals(s.title);
+    }
+
+    // ---------------- 解析上下文（extract / extractPerPage 共用） ----------------
+
+    /** 单次打开的 PDF 解析上下文：源文件引用 / 元标题 / 是否 Tagged / 全部页模型。 */
+    private static final class ParsedDoc implements AutoCloseable {
+        final File source;
+        final PdfDocument pdfDoc;
+        final String title;
+        final List<PageModel> models;
+        final boolean tagged;
+
+        ParsedDoc(File pdf) throws IOException {
+            this.source = pdf;
+            this.pdfDoc = new PdfDocument(new PdfReader(pdf));
+            String metaTitle = pdfDoc.getDocumentInfo() != null ? pdfDoc.getDocumentInfo().getTitle() : null;
+            this.title = (metaTitle == null || metaTitle.isEmpty()) ? pdf.getName() : metaTitle;
+            this.models = PageModelListener.collect(pdfDoc);
+            PdfStructTreeRoot root = pdfDoc.getStructTreeRoot();
+            boolean t = false;
+            if (root != null && root.getKids() != null) {
+                for (IStructureNode n : root.getKids()) {
+                    if (n instanceof PdfStructElem) { t = true; break; }
+                }
+            }
+            this.tagged = t;
+        }
+
+        @Override
+        public void close() throws IOException {
+            pdfDoc.close();
+        }
+    }
+
+    /** 整篇语义提取：与历史行为一致——Tagged 全树优先，REST 服务次之，规则引擎兜底。 */
+    private static DocumentStructure extractAll(ParsedDoc pd, PdfExtractionProperties props) throws IOException {
+        PdfExtractionProperties p = props != null ? props : PdfExtractionProperties.defaults();
+        DocumentStructure doc = new DocumentStructure();
+        doc.title = pd.title;
+        if (pd.tagged) {
+            extractTaggedMcid(doc, pd.pdfDoc, pd.pdfDoc.getStructTreeRoot(), pd.models);
+        }
+        if (doc.sections.isEmpty() && doc.tables.isEmpty()) {
+            // 非 Tagged：按引擎选择走 LayoutAnalyzer（REST 优先可回退 RULE，默认 RULE）
+            boolean wantsRest = p.engine == PdfExtractionProperties.Engine.REST
+                    || (p.engine == PdfExtractionProperties.Engine.AUTO && p.restEndpoint != null);
+            if (wantsRest) {
+                try {
+                    return new RestLayoutAnalyzer(p)
+                            .analyze(java.nio.file.Files.readAllBytes(pd.source.toPath()), doc.title);
+                } catch (IOException e) {
+                    if (p.engine == PdfExtractionProperties.Engine.REST) {
+                        throw e;
+                    }
+                    org.slf4j.LoggerFactory.getLogger(PdfStructureExtractor.class)
+                            .warn("REST layout analyzer failed, fallback to RULE: {}", e.getMessage());
+                }
+            }
+            doc = new RuleLayoutAnalyzer().analyze(pd.models, null, doc.title);
         }
         return doc;
     }
@@ -88,16 +229,7 @@ public final class PdfStructureExtractor {
     private static void extractTaggedMcid(DocumentStructure doc, PdfDocument pdfDoc,
             PdfStructTreeRoot root, List<PageModel> models) {
         // page:mcid → 文本（按内容流顺序拼接）
-        Map<String, StringBuilder> idx = new HashMap<String, StringBuilder>();
-        for (PageModel m : models) {
-            for (io.github.easy4j.pdf.xhtml.convert.layout.PageChunk c : m.chunks) {
-                if (c.mcid < 0) continue;
-                String key = m.pageNo + ":" + c.mcid;
-                StringBuilder sb = idx.get(key);
-                if (sb == null) { sb = new StringBuilder(); idx.put(key, sb); }
-                sb.append(c.text);
-            }
-        }
+        Map<String, StringBuilder> idx = buildMcidIndex(models);
         // 页对象 → 页号
         Map<PdfDictionary, Integer> pageNums = new HashMap<PdfDictionary, Integer>();
         for (int i = 1; i <= pdfDoc.getNumberOfPages(); i++) {
@@ -109,11 +241,43 @@ public final class PdfStructureExtractor {
         }
     }
 
+    /** 全部页模型的 mcid 索引（key 形如 "pageNo:mcid"，页码无前缀歧义：均以 ':' 结尾匹配）。 */
+    private static Map<String, StringBuilder> buildMcidIndex(List<PageModel> models) {
+        Map<String, StringBuilder> idx = new HashMap<String, StringBuilder>();
+        for (PageModel m : models) {
+            for (io.github.easy4j.pdf.xhtml.convert.layout.PageChunk c : m.chunks) {
+                if (c.mcid < 0) continue;
+                String key = m.pageNo + ":" + c.mcid;
+                StringBuilder sb = idx.get(key);
+                if (sb == null) { sb = new StringBuilder(); idx.put(key, sb); }
+                sb.append(c.text);
+            }
+        }
+        return idx;
+    }
+
+    /** 取某页的 mcid 文本子索引（key 前缀 "pageNo:"，':' 边界保证 1 不误配 11）。 */
+    private static Map<String, StringBuilder> filterIndexForPage(Map<String, StringBuilder> idx, int pageNo) {
+        String prefix = pageNo + ":";
+        Map<String, StringBuilder> sub = new HashMap<String, StringBuilder>();
+        for (Map.Entry<String, StringBuilder> e : idx.entrySet()) {
+            if (e.getKey().startsWith(prefix)) {
+                sub.put(e.getKey(), e.getValue());
+            }
+        }
+        return sub;
+    }
+
     private static final class Ctx {
         final Map<String, StringBuilder> idx;
         final Map<PdfDictionary, Integer> pageNums;
+        /** 流式逐页模式：idx 已按单页过滤，空内容元素直接跳过。 */
+        final boolean perPage;
         Ctx(Map<String, StringBuilder> idx, Map<PdfDictionary, Integer> pageNums) {
-            this.idx = idx; this.pageNums = pageNums;
+            this(idx, pageNums, false);
+        }
+        Ctx(Map<String, StringBuilder> idx, Map<PdfDictionary, Integer> pageNums, boolean perPage) {
+            this.idx = idx; this.pageNums = pageNums; this.perPage = perPage;
         }
     }
 
@@ -126,6 +290,9 @@ public final class PdfStructureExtractor {
             DocumentSection sec = new DocumentSection();
             sec.title = textOf(elem, ctx);
             sec.level = headingLevel(role);
+            if (ctx.perPage && sec.title.trim().isEmpty()) {
+                return; // 流式逐页：该标题元素内容不在本页，跳过空壳
+            }
             if (parent != null) parent.children.add(sec); else doc.sections.add(sec);
             return; // 标题元素的后代即标题自身文本，不再下潜重复
         }

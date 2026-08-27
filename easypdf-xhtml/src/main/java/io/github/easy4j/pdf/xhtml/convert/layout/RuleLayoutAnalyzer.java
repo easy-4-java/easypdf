@@ -21,8 +21,10 @@ import io.github.easy4j.pdf.xhtml.convert.DocumentTable;
  */
 public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
 
-    private static final Pattern UNORDERED = Pattern.compile("^[•·◦‣\\-]\\s*");
+    private static final Pattern UNORDERED = Pattern.compile("^[•·◦‣○▪o\\-]\\s*");
     private static final Pattern ORDERED = Pattern.compile("^(\\d{1,2}|[a-z]|[ivxIVX]{1,4})[.)、]\\s*");
+    /** 题注：图/表/Figure/Table/Fig. + 编号（字号 ≤ 正文时判为题注）。 */
+    private static final Pattern CAPTION = Pattern.compile("^(图|表|Figure|Table|Fig\\.?)\\s*\\d+");
     private static final float COLUMN_GAP = 55f;
 
     /** 字号量化到 0.5pt 桶，消除渲染浮点噪声（11.2 vs 11.4 等）。 */
@@ -32,6 +34,16 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
     private static final float HEAD_FACTOR = 1.22f;
 
     private final LatticeTableFinder tableFinder = new LatticeTableFinder();
+    /** 中英文字间系数：净间隙 > 前字号 × 该系数 视为词间空格（见 PdfExtractionProperties.cjkGapFactor）。 */
+    private final float cjkGapFactor;
+
+    public RuleLayoutAnalyzer() {
+        this(PdfExtractionProperties.defaults());
+    }
+
+    public RuleLayoutAnalyzer(PdfExtractionProperties props) {
+        this.cjkGapFactor = props != null ? props.cjkGapFactor : 0.22f;
+    }
 
     @Override
     public String name() {
@@ -43,6 +55,7 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
         String text;
         float size;
         boolean bold;
+        boolean mono;
         float x, y;
         int page;
         List<PageChunk> chunks = new ArrayList<PageChunk>();
@@ -82,7 +95,7 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
                 // 分栏：x 直方图找宽空白带
                 List<List<PageChunk>> columns = splitColumns(flowChunks);
                 for (List<PageChunk> col : columns) {
-                    allLines.addAll(buildLines(col, page.pageNo));
+                    allLines.addAll(buildLines(col, page.pageNo, cjkGapFactor));
                 }
             }
         }
@@ -103,6 +116,7 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
         StringBuilder body = new StringBuilder();
 
         boolean currentIsHeading = false;
+        List<Float> listLevelXs = new ArrayList<Float>(); // 各层级列表行 x 起点（末位=当前最深级）
         int i = 0;
         while (i < allLines.size()) {
             // 流式表格尝试（连续 ≥3 行、≥2 列 x 对齐）
@@ -116,6 +130,24 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
             Line ln = allLines.get(i);
             String text = ln.text.trim();
             if (text.isEmpty()) { i++; continue; }
+
+            // 代码块：连续 ≥3 行等宽字体且行距均匀 → 围栏包裹，内容原样保留
+            int codeLen = codeBlockLength(allLines, i);
+            if (codeLen >= 3) {
+                body.append("```\n");
+                for (int k = 0; k < codeLen; k++) {
+                    body.append(allLines.get(i + k).text).append('\n');
+                }
+                body.append("```\n");
+                i += codeLen;
+                continue;
+            }
+            // 题注：图/表/Figure/Table 编号行且字号不大于正文 → 斜体单独成段
+            if (ln.size <= bodySize + 0.5f && CAPTION.matcher(text).find()) {
+                body.append('*').append(text).append("*\n");
+                i++;
+                continue;
+            }
 
             // 标题护栏：候选字号仅取最大 3 档；行长 >80 的大字不判标题；
             // 封面艺术字（均匀大字号多行 run）排除；标题须为孤立行（下一行字号不同）
@@ -136,14 +168,20 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
                 current.title = text;
                 current.level = headingLevel(allLines, i, bodySize);
                 currentIsHeading = true;
+                listLevelXs.clear();
                 // 延迟入列：由下一次 flush 或循环末尾统一 add，避免标题段整段重复
                 i++;
                 continue;
             }
             String lst = listMarker(text);
             if (lst != null) {
+                int lvl = nestedListLevel(listLevelXs, ln.x);
+                for (int s = 0; s < lvl; s++) {
+                    body.append("  "); // 2 空格/级
+                }
                 body.append(lst).append(text.substring(markerLen(text))).append('\n');
             } else {
+                listLevelXs.clear(); // 普通段落打断列表层级上下文
                 body.append(text).append('\n');
             }
             i++;
@@ -201,7 +239,7 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
 
     // ---------------- 行构建 ----------------
 
-    private static List<Line> buildLines(List<PageChunk> col, int pageNo) {
+    private static List<Line> buildLines(List<PageChunk> col, int pageNo, float gapFactor) {
         List<Line> lines = new ArrayList<Line>();
         List<PageChunk> sorted = new ArrayList<PageChunk>(col);
         Collections.sort(sorted, new Comparator<PageChunk>() {
@@ -218,9 +256,13 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
                 cur = new Line();
                 cur.page = pageNo;
                 cur.x = c.x; cur.y = c.y; cur.size = c.size; cur.bold = c.bold;
+                cur.mono = c.mono;
                 lines.add(cur);
             }
             cur.chunks.add(c);
+            if (!c.mono) {
+                cur.mono = false; // 行内混入非等宽 chunk 即不算等宽行
+            }
             if (c.size > cur.size) { cur.size = c.size; cur.bold = c.bold; }
             cur.x = Math.min(cur.x, c.x);
         }
@@ -234,7 +276,7 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
                 if (prev != null && sb.length() > 0) {
                     float gap = c.x - (prev.x + prev.text.length() * prev.size * 0.55f);
                     boolean latin = isLatinTail(sb) && isLatinHead(c.text);
-                    if (gap > prev.size * 0.22f && latin) {
+                    if (latin && shouldInsertSpace(gap, prev.size, gapFactor)) {
                         sb.append(' ');
                     }
                 }
@@ -244,6 +286,11 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
             l.text = sb.toString();
         }
         return lines;
+    }
+
+    /** 中英字间判定：净间隙 > 前一 chunk 字号 × 系数 时视为词间空格。 */
+    static boolean shouldInsertSpace(float gap, float size, float factor) {
+        return gap > size * factor;
     }
 
     private static boolean isLatinTail(StringBuilder sb) {
@@ -392,12 +439,50 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
         return null;
     }
 
+    /** 从 start 起连续等宽行的长度（行距突变即截断；不足 3 行由调用方判为非代码块）。 */
+    private static int codeBlockLength(List<Line> lines, int start) {
+        int n = lines.size();
+        if (start >= n || !lines.get(start).mono) return 0;
+        float gap = -1f;
+        int len = 1;
+        for (int i = start + 1; i < n && lines.get(i).mono; i++) {
+            float g = lines.get(i - 1).y - lines.get(i).y;
+            if (g <= 0f) break;
+            if (gap >= 0f && Math.abs(g - gap) > Math.max(2f, lines.get(start).size * 0.35f)) {
+                break;
+            }
+            gap = g;
+            len++;
+        }
+        return len;
+    }
+
     private static int markerLen(String text) {
         java.util.regex.Matcher m = UNORDERED.matcher(text);
         if (m.find()) return m.end();
         m = ORDERED.matcher(text);
         if (m.find()) return m.end();
         return 0;
+    }
+
+    /**
+     * 嵌套列表层级推断（维护各层级 x 起点，返回该行应处的层级下标）：
+     * 行 x 起点 ≥ 当前级起点 +12pt → 下钻子级；明显左移（>6pt）→ 回退上级；同级容差内沿用。
+     */
+    private static int nestedListLevel(List<Float> levelXs, float x) {
+        while (!levelXs.isEmpty() && x < levelXs.get(levelXs.size() - 1).floatValue() - 6f) {
+            levelXs.remove(levelXs.size() - 1);
+        }
+        if (levelXs.isEmpty()) {
+            levelXs.add(Float.valueOf(x));
+            return 0;
+        }
+        float top = levelXs.get(levelXs.size() - 1).floatValue();
+        if (x >= top + 12f) {
+            levelXs.add(Float.valueOf(x));
+            return levelXs.size() - 1;
+        }
+        return levelXs.size() - 1;
     }
 
     // ---------------- 流式表格（无格线，x 对齐） ----------------

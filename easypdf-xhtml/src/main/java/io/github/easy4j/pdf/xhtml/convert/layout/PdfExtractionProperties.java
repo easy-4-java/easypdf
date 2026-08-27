@@ -17,6 +17,11 @@ public final class PdfExtractionProperties {
     public Engine engine = Engine.AUTO;
     public String restEndpoint;
     public int restTimeoutMillis = 10000;
+    /**
+     * 中英文字间空格判定系数：行内相邻 chunk 净间隙 > 前一 chunk 字号 × 该系数 且两侧均为拉丁字符时，
+     * 判定为词间空格补一个空格。默认 0.22（Round3 前的硬编码行为）。
+     */
+    public float cjkGapFactor = 0.22f;
 
     public static PdfExtractionProperties defaults() {
         return new PdfExtractionProperties();

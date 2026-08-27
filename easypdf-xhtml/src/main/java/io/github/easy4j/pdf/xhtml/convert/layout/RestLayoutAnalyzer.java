@@ -65,8 +65,62 @@ public final class RestLayoutAnalyzer implements LayoutAnalyzer {
         return parse(json, title);
     }
 
+    /**
+     * POST（含指数退避重试）：仅对 IOException / HTTP 429 / 5xx 重试，
+     * 次数取 {@code props.restRetries} 且上限 {@value #MAX_REST_RETRIES}，
+     * 退避间隔 base 500ms 指数递增（500/1000/2000ms）。
+     */
     private String post(byte[] body) throws IOException {
-        HttpURLConnection conn = (HttpURLConnection) new URL(props.restEndpoint).openConnection();
+        int retries = Math.max(0, Math.min(props.restRetries, MAX_REST_RETRIES));
+        for (int attempt = 0; ; attempt++) {
+            HttpURLConnection conn = (HttpURLConnection) new URL(props.restEndpoint).openConnection();
+            try {
+                return exchange(conn, body);
+            } catch (RestServiceException e) {
+                if (attempt >= retries || !e.retryable) {
+                    throw e;
+                }
+            } catch (IOException e) {
+                if (attempt >= retries) {
+                    throw e;
+                }
+            }
+            sleep(backoffMillis(attempt));
+        }
+    }
+
+    static final int MAX_REST_RETRIES = 3;
+    private static final long BACKOFF_BASE_MS = 500L;
+
+    /** 第 failedAttempt 次失败后的退避间隔：base 500ms 指数递增，移位封顶防溢出。 */
+    public static long backoffMillis(int failedAttempt) {
+        return BACKOFF_BASE_MS * (1L << Math.min(Math.max(failedAttempt, 0), 4));
+    }
+
+    private static void sleep(long millis) throws IOException {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            throw new java.io.InterruptedIOException("rest retry interrupted");
+        }
+    }
+
+    /** 布局服务返回非 2xx；retryable 标记 429/5xx 可重试。 */
+    private static final class RestServiceException extends IOException {
+        final boolean retryable;
+        RestServiceException(String message, boolean retryable) {
+            super(message);
+            this.retryable = retryable;
+        }
+    }
+
+    private static boolean isRetryableStatus(int code) {
+        return code == 429 || code >= 500;
+    }
+
+    /** 单次交换：写出请求体、读干响应流；2xx 返回文本，否则抛 RestServiceException。 */
+    private String exchange(HttpURLConnection conn, byte[] body) throws IOException {
         conn.setConnectTimeout(props.restTimeoutMillis);
         conn.setReadTimeout(props.restTimeoutMillis);
         conn.setDoOutput(true);
@@ -85,7 +139,7 @@ public final class RestLayoutAnalyzer implements LayoutAnalyzer {
             buf.write(b, 0, n);
         }
         if (code < 200 || code >= 300) {
-            throw new IOException("layout service HTTP " + code);
+            throw new RestServiceException("layout service HTTP " + code, isRetryableStatus(code));
         }
         return new String(buf.toByteArray(), StandardCharsets.UTF_8);
     }

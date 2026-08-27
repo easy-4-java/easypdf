@@ -24,7 +24,7 @@ import com.itextpdf.kernel.pdf.tagging.StandardRoles;
 
 import io.github.easy4j.pdf.xhtml.convert.layout.ExtractCache;
 import io.github.easy4j.pdf.xhtml.convert.layout.PageModel;
-import io.github.easy4j.pdf.xhtml.convert.layout.PageModelListener;
+import io.github.easy4j.pdf.xhtml.convert.layout.PageModelCollector;
 import io.github.easy4j.pdf.xhtml.convert.layout.PdfExtractionProperties;
 import io.github.easy4j.pdf.xhtml.convert.layout.RestLayoutAnalyzer;
 import io.github.easy4j.pdf.xhtml.convert.layout.RuleLayoutAnalyzer;
@@ -378,7 +378,7 @@ public final class PdfStructureExtractor {
             stripEmbeddedJavaScript(this.pdfDoc);
             String metaTitle = pdfDoc.getDocumentInfo() != null ? pdfDoc.getDocumentInfo().getTitle() : null;
             this.title = (metaTitle == null || metaTitle.isEmpty()) ? pdf.getName() : metaTitle;
-            this.models = PageModelListener.collect(pdfDoc);
+            this.models = PageModelCollector.collect(pdfDoc);
             PdfStructTreeRoot root = pdfDoc.getStructTreeRoot();
             boolean t = false;
             if (root != null && root.getKids() != null) {

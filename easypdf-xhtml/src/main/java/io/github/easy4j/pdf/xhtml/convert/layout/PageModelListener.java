@@ -85,8 +85,10 @@ public final class PageModelListener implements IEventListener {
         if (size <= 0f) {
             size = ti.getFontSize();
         }
-        boolean bold = fontName(ti).toLowerCase().contains("bold");
-        model.chunks.add(new PageChunk(text, x, y, Math.abs(size), bold, model.pageNo, ti.getMcid()));
+        String fn = fontName(ti).toLowerCase();
+        boolean bold = fn.contains("bold");
+        boolean mono = fn.contains("mono") || fn.contains("courier") || fn.contains("consolas");
+        model.chunks.add(new PageChunk(text, x, y, Math.abs(size), bold, mono, model.pageNo, ti.getMcid()));
     }
 
     private void onImage(ImageRenderInfo ii) {

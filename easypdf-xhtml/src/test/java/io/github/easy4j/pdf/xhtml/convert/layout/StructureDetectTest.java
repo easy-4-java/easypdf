@@ -63,4 +63,57 @@ class StructureDetectTest {
         assertThat(md).containsPattern("(?m)^  - 第三条款$");
         assertThat(md).containsPattern("(?m)^- 第四条款$");   // 回退到上级（不残留缩进）
     }
+
+    // ---------------- W2-2 代码块检测 ----------------
+
+    /** 手工构造三行等宽（fontName 判定后的 mono 标记）行 → 围栏包裹、内容原样保留。 */
+    private static List<PageModel> manualMonoPages() {
+        PageModel page = new PageModel(1);
+        page.chunks.add(new PageChunk("int x = 1;", 40f, 700f, 10f, false, true, 1, -1));
+        page.chunks.add(new PageChunk("while (x > 0) {", 40f, 684f, 10f, false, true, 1, -1));
+        page.chunks.add(new PageChunk("x--; }", 40f, 668f, 10f, false, true, 1, -1));
+        List<PageModel> pages = new java.util.ArrayList<PageModel>();
+        pages.add(page);
+        return pages;
+    }
+
+    @Test
+    void monoRunsFencedAsCodeBlocksVerbatim() throws Exception {
+        DocumentStructure ds = new RuleLayoutAnalyzer()
+                .analyze(manualMonoPages(), Collections.<int[]>emptyList(), "t");
+        String md = ds.fullMarkdown();
+        long fences = md.split("```", -1).length - 1;
+        assertThat(fences).isGreaterThanOrEqualTo(2); // 开栏 + 闭栏
+        assertThat(md).contains("\nint x = 1;\n")      // 原样保留，不做二次解析
+                .contains("while (x > 0) {")
+                .contains("x--; }");
+        // 至少三个连续等宽行才围栏化：两行不足以成块
+        PageModel two = new PageModel(1);
+        two.chunks.add(new PageChunk("int x = 1;", 40f, 700f, 10f, false, true, 1, -1));
+        two.chunks.add(new PageChunk("x--; ", 40f, 684f, 10f, false, true, 1, -1));
+        List<PageModel> tp = new java.util.ArrayList<PageModel>();
+        tp.add(two);
+        DocumentStructure ds2 = new RuleLayoutAnalyzer().analyze(tp, Collections.<int[]>emptyList(), "t");
+        assertThat(ds2.fullMarkdown()).doesNotContain("```");
+    }
+
+    @Test
+    void preRenderedAsMonospaceBecomesFence(@TempDir java.io.File dir) throws Exception {
+        File pdf = new File(dir, "code.pdf");
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        HtmlPdfConverter.htmlToPdf(
+            "<html><body><p>以下为示例：</p>"
+            + "<pre><code>def add(a, b):&#10;    return a + b&#10;print(add(1, 2))</code></pre>"
+            + "</body></html>", out);
+        java.nio.file.Files.write(pdf.toPath(), out.toByteArray());
+        try (PdfDocument doc = new PdfDocument(new PdfReader(new ByteArrayInputStream(
+                java.nio.file.Files.readAllBytes(pdf.toPath()))))) {
+            List<PageModel> pages = PageModelListener.collect(doc);
+            DocumentStructure ds = new RuleLayoutAnalyzer().analyze(pages, Collections.<int[]>emptyList(), "t");
+            String md = ds.fullMarkdown();
+            long fences = md.split("```", -1).length - 1;
+            assertThat(fences).isGreaterThanOrEqualTo(2);
+            assertThat(md).contains("print(add(1, 2))");
+        }
+    }
 }

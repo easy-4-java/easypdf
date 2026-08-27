@@ -43,6 +43,7 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
         String text;
         float size;
         boolean bold;
+        boolean mono;
         float x, y;
         int page;
         List<PageChunk> chunks = new ArrayList<PageChunk>();
@@ -117,6 +118,18 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
             Line ln = allLines.get(i);
             String text = ln.text.trim();
             if (text.isEmpty()) { i++; continue; }
+
+            // 代码块：连续 ≥3 行等宽字体且行距均匀 → 围栏包裹，内容原样保留
+            int codeLen = codeBlockLength(allLines, i);
+            if (codeLen >= 3) {
+                body.append("```\n");
+                for (int k = 0; k < codeLen; k++) {
+                    body.append(allLines.get(i + k).text).append('\n');
+                }
+                body.append("```\n");
+                i += codeLen;
+                continue;
+            }
 
             // 标题护栏：候选字号仅取最大 3 档；行长 >80 的大字不判标题；
             // 封面艺术字（均匀大字号多行 run）排除；标题须为孤立行（下一行字号不同）
@@ -225,9 +238,13 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
                 cur = new Line();
                 cur.page = pageNo;
                 cur.x = c.x; cur.y = c.y; cur.size = c.size; cur.bold = c.bold;
+                cur.mono = c.mono;
                 lines.add(cur);
             }
             cur.chunks.add(c);
+            if (!c.mono) {
+                cur.mono = false; // 行内混入非等宽 chunk 即不算等宽行
+            }
             if (c.size > cur.size) { cur.size = c.size; cur.bold = c.bold; }
             cur.x = Math.min(cur.x, c.x);
         }
@@ -397,6 +414,24 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
         if (UNORDERED.matcher(text).find()) return "- ";
         if (ORDERED.matcher(text).find()) return "1. ";
         return null;
+    }
+
+    /** 从 start 起连续等宽行的长度（行距突变即截断；不足 3 行由调用方判为非代码块）。 */
+    private static int codeBlockLength(List<Line> lines, int start) {
+        int n = lines.size();
+        if (start >= n || !lines.get(start).mono) return 0;
+        float gap = -1f;
+        int len = 1;
+        for (int i = start + 1; i < n && lines.get(i).mono; i++) {
+            float g = lines.get(i - 1).y - lines.get(i).y;
+            if (g <= 0f) break;
+            if (gap >= 0f && Math.abs(g - gap) > Math.max(2f, lines.get(start).size * 0.35f)) {
+                break;
+            }
+            gap = g;
+            len++;
+        }
+        return len;
     }
 
     private static int markerLen(String text) {

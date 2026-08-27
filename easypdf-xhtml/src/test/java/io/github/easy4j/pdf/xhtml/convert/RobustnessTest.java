@@ -414,4 +414,50 @@ class RobustnessTest {
             .isInstanceOfSatisfying(ExtractionException.class,
                 e -> assertThat(e.getCode()).isEqualTo(ExtractionException.Code.CORRUPT));
     }
+
+    // ---------------- Round5-Observability Task 1: pageRange 参数校验 ----------------
+
+    @Test
+    void pageRangeRejectsFromGreaterThanTo(@TempDir File dir) throws Exception {
+        File pdf = writePdf(dir, "range-order.pdf",
+            "<html><body><p>页序校验文本。</p></body></html>");
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                () -> EasyPdf.pageRange(pdf, 5, 2)) // from > to 必须立即拒绝
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("fromPage")
+            .hasMessageContaining("toPage");
+    }
+
+    @Test
+    void pageRangeRejectsZeroOrNegativeArgs(@TempDir File dir) throws Exception {
+        File pdf = writePdf(dir, "range-zero.pdf",
+            "<html><body><p>零负参校验文本。</p></body></html>");
+
+        // from=0 / to=0 / 负数：页码从 1 起算，全部拒绝
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                () -> EasyPdf.pageRange(pdf, 0, 1))
+            .isInstanceOf(IllegalArgumentException.class);
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                () -> EasyPdf.pageRange(pdf, 1, 0))
+            .isInstanceOf(IllegalArgumentException.class);
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                () -> EasyPdf.pageRange(pdf, -1, 2))
+            .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void pageRangeAcceptsValidRange(@TempDir File dir) throws Exception {
+        String html = "<html><body>"
+            + "<p>区间第一页独有内容甲。</p>"
+            + "<p style='page-break-before:always'>区间第二页独有内容乙。</p>"
+            + "<p style='page-break-before:always'>区间第三页独有内容丙。</p>"
+            + "</body></html>";
+        File pdf = writePdf(dir, "three-pages-range.pdf", html);
+
+        String md = EasyPdf.pageRange(pdf, 1, 3);
+        assertThat(md).isNotEmpty();
+        assertThat(md).contains("区间第一页独有内容甲").contains("区间第二页独有内容乙")
+            .contains("区间第三页独有内容丙");
+    }
 }

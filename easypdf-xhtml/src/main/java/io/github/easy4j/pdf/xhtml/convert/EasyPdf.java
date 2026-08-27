@@ -122,6 +122,15 @@ public final class EasyPdf {
      */
     public static String pageRange(File pdf, int fromPage, int toPage) throws IOException {
         Objects.requireNonNull(pdf, "pdf must not be null");
+        if (fromPage > toPage) {
+            throw new IllegalArgumentException("fromPage(" + fromPage + ") > toPage(" + toPage + ")");
+        }
+        if (fromPage <= 0) {
+            throw new IllegalArgumentException("fromPage must be >= 1, was " + fromPage);
+        }
+        if (toPage <= 0) {
+            throw new IllegalArgumentException("toPage must be >= 1, was " + toPage);
+        }
         final StringBuilder md = new StringBuilder();
         PdfStructureExtractor.extractPerPage(pdf, PdfExtractionProperties.defaults(),
                 new PdfStructureExtractor.PageConsumer() {

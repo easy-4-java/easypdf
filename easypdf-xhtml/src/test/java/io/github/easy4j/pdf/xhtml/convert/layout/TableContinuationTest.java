@@ -84,4 +84,43 @@ class TableContinuationTest {
         assertThat(ds.tables.get(0).headers.get(0)).containsExactly("名称", "金额");
         assertThat(ds.tables.get(1).headers.get(0)).containsExactly("项目", "数量", "备注");
     }
+
+    @Test
+    void colspanWideCellKeepsPlaceholderColumns() throws Exception {
+        // 横跨两列的合并格：文本放首个覆盖列，其余列以空串占位，保持 GFM 列数对齐
+        String html = "<html><body><table border='1'>"
+            + "<tr><td>A甲</td><td>A乙</td><td>A丙</td></tr>"
+            + "<tr><td colspan='2'>跨两列内容较长的合并单元格文本</td><td>B丙</td></tr>"
+            + "<tr><td>C甲</td><td>C乙</td><td>C丙</td></tr>"
+            + "</table></body></html>";
+        DocumentStructure ds = new RuleLayoutAnalyzer()
+                .analyze(renderPages(html), Collections.<int[]>emptyList(), "t");
+        assertThat(ds.tables).hasSize(1);
+        DocumentTable t = ds.tables.get(0);
+        assertThat(t.headers.get(0)).containsExactly("A甲", "A乙", "A丙");
+        assertThat(t.rows.get(0)).containsExactly("跨两列内容较长的合并单元格文本", "", "B丙");
+        assertThat(t.rows.get(1)).containsExactly("C甲", "C乙", "C丙");
+        // Markdown 输出保形：占位空列保留管道分隔（行尾“||”为既有渲染形态，
+        // 归 W3 的 DocumentStructure 域，此处只锁列占位与顺序）
+        String md = ds.toMarkdown();
+        assertThat(md).contains("| A甲 | A乙 | A丙 ")
+                      .contains("| 跨两列内容较长的合并单元格文本 |  | B丙 ")
+                      .contains("| C甲 | C乙 | C丙 ");
+    }
+
+    @Test
+    void rowspanCellStaysInFirstBandWithEmptyPlaceholders() throws Exception {
+        // 纵跨两行的合并格：垂直居中渲染的文本必须归入首行带，余行留空占位；
+        // 单元格内多行文本按视觉自上而下拼接。
+        String html = "<html><body><table border='1'>"
+            + "<tr><td rowspan='2'>纵跨单元格文本</td><td>R1B</td></tr>"
+            + "<tr><td>R2B高行内容较多较多较多<br/>第二行使下方变高</td></tr>"
+            + "</table></body></html>";
+        DocumentStructure ds = new RuleLayoutAnalyzer()
+                .analyze(renderPages(html), Collections.<int[]>emptyList(), "t");
+        assertThat(ds.tables).hasSize(1);
+        DocumentTable t = ds.tables.get(0);
+        assertThat(t.headers.get(0)).containsExactly("纵跨单元格文本", "R1B");
+        assertThat(t.rows.get(0)).containsExactly("", "R2B高行内容较多较多较多第二行使下方变高");
+    }
 }

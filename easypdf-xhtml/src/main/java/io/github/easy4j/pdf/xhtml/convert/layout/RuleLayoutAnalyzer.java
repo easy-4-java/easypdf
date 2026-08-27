@@ -547,6 +547,14 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
                 && Math.abs(b.firstRowMaxSize - bodySize) <= 0.5f;
     }
 
+    private static final float GRID_TOL = 2.5f; // 与 LatticeTableFinder 聚类容差一致
+
+    /**
+     * 格线表 → 表模型：以“列×行带的视觉单元组”表达合并单元格语义（Task W1-2）。
+     * 相邻行带之间某列 x 范围内无横向分隔线 → 两带同属一个纵向合并格（rowspan）：
+     * 值落组内首带，余带空串占位；横向合并格（colspan）中跨列宽文本由 cellContent
+     * 的窗口归属自然落入首个覆盖列，其余列空串占位——GFM 列数始终对齐保形。
+     */
     private static DocumentTable buildTable(PageModel page, TableRegion r) {
         DocumentTable tbl = new DocumentTable();
         int nCols = r.colXs.size() - 1;
@@ -554,16 +562,44 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
         if (nCols < 1 || nRows < 1) {
             return null;
         }
-        for (int row = nRows - 1; row >= 0; row--) {
-            float top = r.rowYs.get(row + 1).floatValue();
-            float bottom = r.rowYs.get(row).floatValue();
+        // 每列：行带 → 视觉单元组编号（band 0 = 最上行）
+        int[][] groupOfBand = new int[nCols][];
+        for (int col = 0; col < nCols; col++) {
+            float left = r.colXs.get(col).floatValue();
+            float right = r.colXs.get(col + 1).floatValue();
+            int[] groups = new int[nRows];
+            int g = 0;
+            for (int band = 0; band < nRows; band++) {
+                if (band > 0 && dividerPresent(page, left, right,
+                        r.rowYs.get(nRows - band).floatValue())) {
+                    g++;
+                }
+                groups[band] = g;
+            }
+            groupOfBand[col] = groups;
+        }
+        for (int band = 0; band < nRows; band++) {
             List<String> cells = new ArrayList<String>();
             for (int col = 0; col < nCols; col++) {
                 float left = r.colXs.get(col).floatValue();
                 float right = r.colXs.get(col + 1).floatValue();
-                cells.add(cellContent(page, left, right, bottom, top));
+                boolean mergedAbove = band > 0
+                        && groupOfBand[col][band] == groupOfBand[col][band - 1];
+                if (mergedAbove) {
+                    cells.add(""); // 纵向合并格余行：空占位保持列形
+                    continue;
+                }
+                float top = r.rowYs.get(nRows - band).floatValue();
+                float bottom = r.rowYs.get(nRows - band - 1).floatValue();
+                int endBand = band;
+                while (endBand + 1 < nRows
+                        && groupOfBand[col][endBand + 1] == groupOfBand[col][band]) {
+                    endBand++;
+                }
+                float groupBottom = r.rowYs.get(nRows - endBand - 1).floatValue();
+                cells.add(cellContent(page, left, right, groupBottom, top));
             }
-            if (row == nRows - 1) {
+            if (band == 0) {
                 tbl.headers.add(cells);
             } else {
                 tbl.rows.add(cells);
@@ -572,6 +608,25 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
         return tbl;
     }
 
+    /** 边界 y 处该列 x 范围是否存在横向分隔线（缺失即判定为纵向合并格）。 */
+    private static boolean dividerPresent(PageModel page, float left, float right, float y) {
+        for (RawStroke s : page.strokes) {
+            if (!s.horizontal()) {
+                continue;
+            }
+            if (Math.abs((s.y1 + s.y2) / 2f - y) > GRID_TOL) {
+                continue;
+            }
+            float sx = Math.min(s.x1, s.x2);
+            float ex = Math.max(s.x1, s.x2);
+            if (sx <= left + 3f && ex >= right - 3f) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** 单元格内容：按视觉顺序（y 自上而下、同行 x 升序）拼接文本与图片标记。 */
     private static String cellContent(PageModel page, float left, float right, float bottom, float top) {
         List<PageChunk> inCell = new ArrayList<PageChunk>();
         for (PageChunk c : page.chunks) {
@@ -580,11 +635,22 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
             }
         }
         Collections.sort(inCell, new Comparator<PageChunk>() {
-            @Override public int compare(PageChunk a, PageChunk b) { return Float.compare(a.x, b.x); }
+            @Override public int compare(PageChunk a, PageChunk b) {
+                if (Math.abs(a.y - b.y) > 0.5f) {
+                    return Float.compare(b.y, a.y); // 多行单元格自上而下
+                }
+                return Float.compare(a.x, b.x);
+            }
         });
         StringBuilder sb = new StringBuilder();
+        PageChunk prev = null;
         for (PageChunk c : inCell) {
+            if (prev != null && Math.abs(prev.y - c.y) > prev.size * 0.5f
+                    && isLatinTail(sb) && isLatinHead(c.text)) {
+                sb.append(' '); // 仅拉丁词间换行补空格，CJK 直接相连
+            }
             sb.append(c.text.trim());
+            prev = c;
         }
         for (RawImage img : page.images) {
             if (img.x >= left && img.x < right && img.y > bottom && img.y <= top && img.bytes.length > 0) {

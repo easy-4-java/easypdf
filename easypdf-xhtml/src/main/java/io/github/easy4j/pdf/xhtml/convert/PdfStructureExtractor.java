@@ -180,11 +180,53 @@ public final class PdfStructureExtractor {
         }
     }
 
-    /** PdfName.toString() 形如 "/H1"，归一化去斜杠。 */
+    /** PdfName.toString() 形如 "/H1"，归一化去斜杠并映射 Word 导出的角色别名。 */
     private static String normRole(PdfStructElem elem) {
         if (elem.getRole() == null) return "";
-        String r = elem.getRole().toString();
-        return r.startsWith("/") ? r.substring(1) : r;
+        return canonicalRole(elem.getRole().toString());
+    }
+
+    /** Word 等 Office 导出器常见结构角色别名 → PDF 标准角色（key 全小写）。 */
+    private static final Map<String, String> ROLE_ALIASES = buildRoleAliases();
+
+    private static Map<String, String> buildRoleAliases() {
+        Map<String, String> m = new HashMap<String, String>();
+        for (int i = 1; i <= 6; i++) {
+            m.put("h" + i, "H" + i);
+            m.put("heading" + i, "H" + i);
+            m.put("heading " + i, "H" + i);
+            m.put("标题" + i, "H" + i);
+            m.put("标题 " + i, "H" + i);
+        }
+        m.put("table", StandardRoles.TABLE);
+        m.put("p", StandardRoles.P);
+        m.put("paragraph", StandardRoles.P);
+        m.put("正文", StandardRoles.P);
+        m.put("l", StandardRoles.L);
+        m.put("list", StandardRoles.L);
+        m.put("li", StandardRoles.LI);
+        m.put("list item", StandardRoles.LI);
+        m.put("tr", StandardRoles.TR);
+        m.put("table row", StandardRoles.TR);
+        m.put("td", StandardRoles.TD);
+        m.put("th", StandardRoles.TH);
+        m.put("table header cell", StandardRoles.TH);
+        return m;
+    }
+
+    /**
+     * 角色归一化：去斜杠 + 去首尾空白，命中别名表的映射为标准角色
+     * （Word 导出常写 {@code heading 1}/{@code h1}/{@code 标题 1} 而非 {@code H1}）。
+     * 未识别的自定义角色原样保留（大小写不变），与既有行为兼容。
+     * 包级可见以便直接单测（Word 样本无法离线获得）。
+     */
+    static String canonicalRole(String raw) {
+        if (raw == null) return "";
+        String r = raw.trim();
+        if (r.startsWith("/")) r = r.substring(1);
+        if (r.isEmpty()) return "";
+        String mapped = ROLE_ALIASES.get(r.toLowerCase(java.util.Locale.ROOT));
+        return mapped != null ? mapped : r;
     }
 
     private static int headingLevel(String role) {

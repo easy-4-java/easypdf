@@ -49,6 +49,24 @@ public final class PdfExtractionProperties {
     /** 页数上限：打开后立刻校验，超出即 LIMIT_EXCEEDED；≤0 表示不限制。 */
     public int maxPages = 5000;
 
+    /**
+     * 是否将 PDF 字符级颜色 / 背景渲染为内嵌 HTML 标签（{@code <span style="color:...">}）。
+     *
+     * <p>默认 {@code false} → 输出仍为纯 GFM，<strong>与既有承诺一致</strong>。
+     * 开启后输出会含 HTML 标签：GitHub 渲染正确，其他渲染器（VS Code / Typora / 纯文本）可能
+     * 显示为源码或纯文本。
+     *
+     * <p>本开关当前 <strong>不生效</strong>——颜色采集尚未实现（plan 中 3.3 任务）。
+     * 加进来是为契约先行：3.3 完成后调用方只要设 {@code true} 即可拿到富样式输出，
+     * 而不必再升级 easypdf 主版本。
+     *
+     * <p>本开关一旦开启，{@link io.github.easy4j.pdf.xhtml.convert.MarkdownConverter}
+     * 在拼接字符串时会调用
+     * {@link io.github.easy4j.pdf.xhtml.convert.HtmlEscaper#escape(String)}
+     * 转义 {@code &/</>"/}。关闭时维持纯 GFM 字面输出。
+     */
+    public boolean renderHtmlColor = false;
+
     public static PdfExtractionProperties defaults() {
         return new PdfExtractionProperties();
     }

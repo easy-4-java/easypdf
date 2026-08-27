@@ -141,6 +141,7 @@
         <module>easypdf-webmvc</module>
         <module>easypdf-webit</module>
         <module>easypdf-xhtml</module>
+        <module>easypdf-it</module>
     </modules>
 
     <!-- 构建配置（Build） -->

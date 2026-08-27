@@ -33,6 +33,10 @@ import io.github.easy4j.pdf.xhtml.convert.layout.RuleLayoutAnalyzer;
  */
 public final class PdfStructureExtractor {
 
+    /** 结构化日志：入口 debug / 结果 INFO / warnings 与失败 WARN。 */
+    private static final org.slf4j.Logger LOG =
+            org.slf4j.LoggerFactory.getLogger(PdfStructureExtractor.class);
+
     private PdfStructureExtractor() {
     }
 
@@ -42,6 +46,7 @@ public final class PdfStructureExtractor {
 
     public static DocumentStructure extract(File pdf, PdfExtractionProperties props) throws IOException {
         Objects.requireNonNull(pdf, "pdf must not be null");
+        LOG.debug("extract requested file={}", pdf.getName());
         if (!pdf.isFile()) {
             // NOT_FOUND 分级包装；文案与历史行为一致（仍为 IOException 子类）
             throw new ExtractionException(ExtractionException.Code.NOT_FOUND,
@@ -138,6 +143,17 @@ public final class PdfStructureExtractor {
                         "PDF extraction failed (" + t.getClass().getSimpleName() + "): " + t.getMessage(), t);
         }
         r.durationMillis = System.currentTimeMillis() - start;
+        if (r.success) {
+            // file 只取 basename，避免日志泄漏路径 PII
+            LOG.info("extract file={} pages={} chars={} tables={} images={} durationMs={}",
+                    pdf.getName(), r.pages, r.chars, r.tables, r.images, r.durationMillis);
+            if (!r.warnings.isEmpty()) {
+                LOG.warn("extract warnings file={} warnings={}", pdf.getName(), r.warnings);
+            }
+        } else {
+            LOG.warn("extract failed file={} code={} msg={}",
+                    pdf.getName(), r.error.getCode(), r.error.getMessage());
+        }
         return r;
     }
 

@@ -5,13 +5,32 @@
 	<parent>
 		<groupId>io.github.easy4j</groupId>
 		<artifactId>easypdf</artifactId>
-		<version>2.0.x.20260630-SNAPSHOT</version>
+		<version>2.0.x.20260630</version>
 	</parent>
 
 	<artifactId>easypdf-xhtml</artifactId>
 	<description>Building doc documents based on xhtml templates using Docx4j</description>
 	<name>${project.groupId}:${project.artifactId}</name>
 	<packaging>jar</packaging>
+	<url>https://github.com/easy-4-java/easypdf</url>
+	<licenses>
+		<license>
+			<name>The Apache Software License, Version 2.0</name>
+			<url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+		</license>
+	</licenses>
+	<scm>
+		<connection>scm:git:https://github.com/easy-4-java/easypdf.git</connection>
+		<developerConnection>scm:git:https://github.com/easy-4-java/easypdf.git</developerConnection>
+		<url>https://github.com/easy-4-java/easypdf</url>
+	</scm>
+	<developers>
+		<developer>
+			<name>Loong Wan</name>
+			<email>hiwepy@gmail.com</email>
+			<url>https://github.com/loong10k</url>
+		</developer>
+	</developers>
 
 	<dependencies>
 
@@ -33,7 +52,7 @@
 		<dependency>
 		    <groupId>net.sourceforge.cssparser</groupId>
 		    <artifactId>cssparser</artifactId>
-		    <version>0.9.27</version>
+		    <version>0.9.30</version>
 		</dependency>
 
 		<!-- ###################### HTML、CSS 解析工具包###################### -->
@@ -169,7 +188,7 @@
 		<dependency>
 			<groupId>org.apache.pdfbox</groupId>
 			<artifactId>pdfbox</artifactId>
-			<version>3.0.3</version>
+			<version>3.0.7</version>
 		</dependency>
 		<!-- 将HTML内容转换为PDF文档 -->
 		<!-- https://mvnrepository.com/artifact/com.openhtmltopdf/openhtmltopdf-pdfbox -->
@@ -196,7 +215,6 @@
 			<artifactId>openhtmltopdf-pdfbox</artifactId>
 			<version>1.1.24</version>
 		</dependency>
-
 		<!-- https://mvnrepository.com/artifact/com.vladsch.flexmark/flexmark -->
 		<dependency>
 			<groupId>com.vladsch.flexmark</groupId>

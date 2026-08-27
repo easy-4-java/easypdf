@@ -5,14 +5,39 @@
 	<parent>
 		<groupId>io.github.easy4j</groupId>
 		<artifactId>easypdf</artifactId>
-		<version>2.0.x.20260630-SNAPSHOT</version>
+		<version>2.0.x.20260630</version>
 	</parent>
 	<artifactId>easypdf-bom</artifactId>
 	<name>${project.groupId}:${project.artifactId}</name>
 	<packaging>pom</packaging>
+	<description>Bill of materials (BOM) for easypdf modules</description>
+	<url>https://github.com/easy-4-java/easypdf</url>
+	<licenses>
+		<license>
+			<name>The Apache Software License, Version 2.0</name>
+			<url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+		</license>
+	</licenses>
+	<scm>
+		<connection>scm:git:https://github.com/easy-4-java/easypdf.git</connection>
+		<developerConnection>scm:git:https://github.com/easy-4-java/easypdf.git</developerConnection>
+		<url>https://github.com/easy-4-java/easypdf</url>
+	</scm>
+	<developers>
+		<developer>
+			<name>Loong Wan</name>
+			<email>hiwepy@gmail.com</email>
+			<url>https://github.com/loong10k</url>
+		</developer>
+	</developers>
 
 	<dependencyManagement>
 		<dependencies>
+			<dependency>
+				<groupId>${project.groupId}</groupId>
+				<artifactId>easypdf-core</artifactId>
+				<version>${project.version}</version>
+			</dependency>
 			<dependency>
 				<groupId>${project.groupId}</groupId>
 				<artifactId>easypdf-beetl</artifactId>
@@ -55,7 +80,17 @@
 			</dependency>
 			<dependency>
 				<groupId>${project.groupId}</groupId>
+				<artifactId>easypdf-webmvc</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>${project.groupId}</groupId>
 				<artifactId>easypdf-webit</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>${project.groupId}</groupId>
+				<artifactId>easypdf-xhtml</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 		</dependencies>

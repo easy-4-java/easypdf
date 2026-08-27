@@ -10,8 +10,10 @@ import java.util.Map;
 import java.util.Objects;
 
 import com.itextpdf.kernel.PdfException;
+import com.itextpdf.kernel.pdf.PdfCatalog;
 import com.itextpdf.kernel.pdf.PdfDictionary;
 import com.itextpdf.kernel.pdf.PdfDocument;
+import com.itextpdf.kernel.pdf.PdfName;
 import com.itextpdf.kernel.pdf.PdfReader;
 import com.itextpdf.kernel.pdf.canvas.parser.PdfTextExtractor;
 import com.itextpdf.kernel.pdf.tagging.IStructureNode;
@@ -22,7 +24,7 @@ import com.itextpdf.kernel.pdf.tagging.StandardRoles;
 
 import io.github.easy4j.pdf.xhtml.convert.layout.ExtractCache;
 import io.github.easy4j.pdf.xhtml.convert.layout.PageModel;
-import io.github.easy4j.pdf.xhtml.convert.layout.PageModelListener;
+import io.github.easy4j.pdf.xhtml.convert.layout.PageModelCollector;
 import io.github.easy4j.pdf.xhtml.convert.layout.PdfExtractionProperties;
 import io.github.easy4j.pdf.xhtml.convert.layout.RestLayoutAnalyzer;
 import io.github.easy4j.pdf.xhtml.convert.layout.RuleLayoutAnalyzer;
@@ -33,6 +35,10 @@ import io.github.easy4j.pdf.xhtml.convert.layout.RuleLayoutAnalyzer;
  */
 public final class PdfStructureExtractor {
 
+    /** 结构化日志：入口 debug / 结果 INFO / warnings 与失败 WARN。 */
+    private static final org.slf4j.Logger LOG =
+            org.slf4j.LoggerFactory.getLogger(PdfStructureExtractor.class);
+
     private PdfStructureExtractor() {
     }
 
@@ -40,8 +46,31 @@ public final class PdfStructureExtractor {
         return extract(pdf, PdfExtractionProperties.defaults());
     }
 
+    /**
+     * 结构化提取（带进程级计数）：成功与失败各计一次进 {@link ExtractorMetrics#INSTANCE}。
+     * 本方法是全部提取路径的单一收口（报告式 {@link #extractWithReport} 也委托至此），
+     * 因此不会重复计数；耗时用 System.currentTimeMillis() 测量。未分级的
+     * IOException / 运行时异常按 CORRUPT 归类，与报告式入口的兜底口径一致。
+     */
     public static DocumentStructure extract(File pdf, PdfExtractionProperties props) throws IOException {
         Objects.requireNonNull(pdf, "pdf must not be null");
+        long start = System.currentTimeMillis();
+        try {
+            DocumentStructure doc = doExtract(pdf, props);
+            ExtractorMetrics.INSTANCE.recordSuccess(System.currentTimeMillis() - start);
+            return doc;
+        } catch (IOException | RuntimeException e) {
+            ExtractionException.Code code = e instanceof ExtractionException
+                    ? ((ExtractionException) e).getCode()
+                    : ExtractionException.Code.CORRUPT;
+            ExtractorMetrics.INSTANCE.recordFailure(code, System.currentTimeMillis() - start);
+            throw e;
+        }
+    }
+
+    /** 提取主体：原 extract(File, props) 逻辑，不含计数。 */
+    private static DocumentStructure doExtract(File pdf, PdfExtractionProperties props) throws IOException {
+        LOG.debug("extract requested file={}", pdf.getName());
         if (!pdf.isFile()) {
             // NOT_FOUND 分级包装；文案与历史行为一致（仍为 IOException 子类）
             throw new ExtractionException(ExtractionException.Code.NOT_FOUND,
@@ -138,6 +167,17 @@ public final class PdfStructureExtractor {
                         "PDF extraction failed (" + t.getClass().getSimpleName() + "): " + t.getMessage(), t);
         }
         r.durationMillis = System.currentTimeMillis() - start;
+        if (r.success) {
+            // file 只取 basename，避免日志泄漏路径 PII
+            LOG.info("extract file={} pages={} chars={} tables={} images={} durationMs={}",
+                    pdf.getName(), r.pages, r.chars, r.tables, r.images, r.durationMillis);
+            if (!r.warnings.isEmpty()) {
+                LOG.warn("extract warnings file={} warnings={}", pdf.getName(), r.warnings);
+            }
+        } else {
+            LOG.warn("extract failed file={} code={} msg={}",
+                    pdf.getName(), r.error.getCode(), r.error.getMessage());
+        }
         return r;
     }
 
@@ -335,9 +375,10 @@ public final class PdfStructureExtractor {
         ParsedDoc(File pdf) throws IOException {
             this.source = pdf;
             this.pdfDoc = new PdfDocument(new PdfReader(pdf));
+            stripEmbeddedJavaScript(this.pdfDoc);
             String metaTitle = pdfDoc.getDocumentInfo() != null ? pdfDoc.getDocumentInfo().getTitle() : null;
             this.title = (metaTitle == null || metaTitle.isEmpty()) ? pdf.getName() : metaTitle;
-            this.models = PageModelListener.collect(pdfDoc);
+            this.models = PageModelCollector.collect(pdfDoc);
             PdfStructTreeRoot root = pdfDoc.getStructTreeRoot();
             boolean t = false;
             if (root != null && root.getKids() != null) {
@@ -351,6 +392,29 @@ public final class PdfStructureExtractor {
         @Override
         public void close() throws IOException {
             pdfDoc.close();
+        }
+
+        /**
+         * 纵深防御：打开后立即剥离 catalog 顶层的脚本向量（/JS、/JavaScript 与
+         * JavaScript 型 OpenAction）。iText 内核解析从不执行嵌入 JS（库内无解释器，
+         * 也无 setIgnoreJavaScript 开关——7.x/8.x API 均不存在），此剥离保证本
+         * 上下文以及任何下游复用（序列化/再转换）都不会把脚本带出去。
+         * 全部 reader 构造经由 ParsedDoc，extract 与 extractPerPage 两路径均被覆盖；
+         * 缓存命中分支不打开文件、无 reader，无需处理。
+         */
+        private static void stripEmbeddedJavaScript(PdfDocument doc) {
+            PdfCatalog cat = doc.getCatalog();
+            if (cat == null || cat.getPdfObject() == null) {
+                return;
+            }
+            // PdfCatalog 是 PdfObjectWrapper 包装而非字典本身：经 getPdfObject 操作条目
+            PdfDictionary root = cat.getPdfObject();
+            root.remove(PdfName.JS);
+            root.remove(PdfName.JavaScript);
+            PdfDictionary oa = root.getAsDictionary(PdfName.OpenAction);
+            if (oa != null && PdfName.JavaScript.equals(oa.get(PdfName.S))) {
+                root.remove(PdfName.OpenAction); // 仅摘除 JS 型动作，保留普通页面定位
+            }
         }
     }
 

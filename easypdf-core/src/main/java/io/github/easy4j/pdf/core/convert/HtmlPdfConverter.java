@@ -22,6 +22,10 @@ public final class HtmlPdfConverter {
 
     static {
         FONT_PROVIDER.addSystemFonts();
+        String configuredFont = System.getenv("EASYPDF_CJK_FONT");
+        if (configuredFont != null && !configuredFont.trim().isEmpty()) {
+            FONT_PROVIDER.addFont(configuredFont);
+        }
     }
 
     private HtmlPdfConverter() {
@@ -38,7 +42,7 @@ public final class HtmlPdfConverter {
         Objects.requireNonNull(html, "html must not be null");
         Objects.requireNonNull(out, "out must not be null");
         ConverterProperties props = new ConverterProperties();
-        props.setFontProvider(FONT_PROVIDER);
+        props.setFontProvider(new FontProvider(FONT_PROVIDER.getFontSet()));
         HtmlConverter.convertToPdf(html, out, props);
     }
 
@@ -50,7 +54,7 @@ public final class HtmlPdfConverter {
         PdfDocument pdfDoc = new PdfDocument(writer);
         pdfDoc.setTagged();
         ConverterProperties props = new ConverterProperties();
-        props.setFontProvider(FONT_PROVIDER);
+        props.setFontProvider(new FontProvider(FONT_PROVIDER.getFontSet()));
         HtmlConverter.convertToPdf(html, pdfDoc, props);
     }
 

@@ -514,12 +514,23 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
         return n;
     }
 
-    /** 行内列簇起始 x（列边界：净间隙 > max(size*1.2, 12pt)）。 */
+    /**
+     * Chunk widths are estimated from font height, not measured glyph advances.
+     * Allow 1pt of geometric tolerance at the cell-gap boundary so small font
+     * metric differences do not collapse an otherwise aligned borderless table.
+     * This does not override the independent reading-column gap.
+     */
+    private static boolean startsNewCell(PageChunk previous, PageChunk next) {
+        float estimatedEnd = previous.x + previous.text.length() * previous.size * 0.55f;
+        return next.x - estimatedEnd > Math.max(previous.size * 1.2f, 12f) - 1f;
+    }
+
+    /** 行内列簇起始 x（使用统一的单元格间隙判定）。 */
     private static List<Float> clusterStarts(Line l) {
         List<Float> xs = new ArrayList<Float>();
         PageChunk prev = null;
         for (PageChunk c : l.chunks) {
-            if (prev == null || c.x - (prev.x + prev.text.length() * prev.size * 0.55f) > Math.max(prev.size * 1.2f, 12f)) {
+            if (prev == null || startsNewCell(prev, c)) {
                 xs.add(Float.valueOf(c.x));
             }
             prev = c;
@@ -545,7 +556,7 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
             StringBuilder cell = new StringBuilder();
             PageChunk prev = null;
             for (PageChunk c : l.chunks) {
-                if (prev != null && c.x - (prev.x + prev.text.length() * prev.size * 0.55f) > Math.max(prev.size * 1.2f, 12f)) {
+                if (prev != null && startsNewCell(prev, c)) {
                     cells.add(cell.toString().trim());
                     cell = new StringBuilder();
                 }

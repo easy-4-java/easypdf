@@ -237,7 +237,32 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
             lastEnd = c.x + c.text.length() * c.size * 0.6f;
         }
         if (!cur.isEmpty()) cols.add(cur);
+        // Closely spaced columns with three aligned rows are a borderless table,
+        // not two independent reading columns. Keep their chunks together so
+        // streamTableLength can inspect both cells on each row.
+        if (cols.size() == 2 && alignedTableRows(cols.get(0), cols.get(1))) {
+            List<List<PageChunk>> table = new ArrayList<List<PageChunk>>();
+            table.add(new ArrayList<PageChunk>(chunks));
+            return table;
+        }
         return cols;
+    }
+
+    private static boolean alignedTableRows(List<PageChunk> left, List<PageChunk> right) {
+        if (left.size() < 3 || right.size() < 3
+                || right.get(0).x - left.get(0).x > 250f) {
+            return false;
+        }
+        int aligned = 0;
+        for (PageChunk a : left) {
+            for (PageChunk b : right) {
+                if (Math.abs(a.y - b.y) <= 2f) {
+                    aligned++;
+                    break;
+                }
+            }
+        }
+        return aligned >= 3;
     }
 
     private static float endOf(List<PageChunk> col) {

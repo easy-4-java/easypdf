@@ -38,7 +38,7 @@ public final class HtmlPdfConverter {
         Objects.requireNonNull(html, "html must not be null");
         Objects.requireNonNull(out, "out must not be null");
         ConverterProperties props = new ConverterProperties();
-        props.setFontProvider(FONT_PROVIDER);
+        props.setFontProvider(new FontProvider(FONT_PROVIDER.getFontSet()));
         HtmlConverter.convertToPdf(html, out, props);
     }
 
@@ -50,7 +50,7 @@ public final class HtmlPdfConverter {
         PdfDocument pdfDoc = new PdfDocument(writer);
         pdfDoc.setTagged();
         ConverterProperties props = new ConverterProperties();
-        props.setFontProvider(FONT_PROVIDER);
+        props.setFontProvider(new FontProvider(FONT_PROVIDER.getFontSet()));
         HtmlConverter.convertToPdf(html, pdfDoc, props);
     }
 

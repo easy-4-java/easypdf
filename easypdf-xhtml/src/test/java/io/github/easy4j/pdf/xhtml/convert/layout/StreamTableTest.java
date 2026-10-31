@@ -26,14 +26,17 @@ class StreamTableTest {
     }
 
     @Test
-    void borderlessAlignedTableBecomesPipeTable() throws Exception {
+    void wideBorderlessTableUsesExplicitColumnGap() throws Exception {
         List<PageModel> pages = renderPages(
             "<html><body><table style='border:none; width:400px'>"
             + "<tr><td>列甲</td><td>列乙</td></tr>"
             + "<tr><td>值一</td><td>值二</td></tr>"
             + "<tr><td>值三</td><td>值四</td></tr>"
             + "</table></body></html>");
-        DocumentStructure ds = new RuleLayoutAnalyzer().analyze(pages, Collections.<int[]>emptyList(), "t");
+        // A wide gutter is ambiguous with reading columns; callers can opt in.
+        TierConfig config = new TierConfig();
+        config.columnGapPt = 200f;
+        DocumentStructure ds = new RuleLayoutAnalyzer(config).analyze(pages, Collections.<int[]>emptyList(), "t");
         assertThat(ds.tables).isNotEmpty();
         assertThat(ds.tables.get(0).headers.get(0)).containsExactly("列甲", "列乙");
         assertThat(ds.tables.get(0).rows).hasSize(2);
@@ -50,11 +53,6 @@ class StreamTableTest {
             + "<tr><td>值三</td><td>值四</td></tr>"
             + "</table></body></html>");
         DocumentStructure ds = new RuleLayoutAnalyzer().analyze(pages, Collections.<int[]>emptyList(), "t");
-        for (PageModel page : pages) {
-            for (PageChunk c : page.chunks) {
-                System.out.println("AUTO_TABLE " + c.text + " x=" + c.x + " y=" + c.y + " size=" + c.size);
-            }
-        }
         assertThat(ds.tables).isNotEmpty();
         assertThat(ds.tables.get(0).headers.get(0)).containsExactly("列甲", "列乙");
         assertThat(ds.tables.get(0).rows).hasSize(2);

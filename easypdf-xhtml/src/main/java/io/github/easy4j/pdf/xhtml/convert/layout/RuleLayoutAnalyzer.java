@@ -237,32 +237,7 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
             lastEnd = c.x + c.text.length() * c.size * 0.6f;
         }
         if (!cur.isEmpty()) cols.add(cur);
-        // Closely spaced columns with three aligned rows are a borderless table,
-        // not two independent reading columns. Keep their chunks together so
-        // streamTableLength can inspect both cells on each row.
-        if (cols.size() == 2 && alignedTableRows(cols.get(0), cols.get(1))) {
-            List<List<PageChunk>> table = new ArrayList<List<PageChunk>>();
-            table.add(new ArrayList<PageChunk>(chunks));
-            return table;
-        }
         return cols;
-    }
-
-    private static boolean alignedTableRows(List<PageChunk> left, List<PageChunk> right) {
-        if (left.size() < 3 || right.size() < 3
-                || right.get(0).x - left.get(0).x > 250f) {
-            return false;
-        }
-        int aligned = 0;
-        for (PageChunk a : left) {
-            for (PageChunk b : right) {
-                if (Math.abs(a.y - b.y) <= 2f) {
-                    aligned++;
-                    break;
-                }
-            }
-        }
-        return aligned >= 3;
     }
 
     private static float endOf(List<PageChunk> col) {
@@ -539,12 +514,23 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
         return n;
     }
 
-    /** 行内列簇起始 x（列边界：净间隙 > max(size*1.2, 12pt)）。 */
+    /**
+     * Chunk widths are estimated from font height, not measured glyph advances.
+     * Allow 1pt of geometric tolerance at the cell-gap boundary so small font
+     * metric differences do not collapse an otherwise aligned borderless table.
+     * This does not override the independent reading-column gap.
+     */
+    private static boolean startsNewCell(PageChunk previous, PageChunk next) {
+        float estimatedEnd = previous.x + previous.text.length() * previous.size * 0.55f;
+        return next.x - estimatedEnd > Math.max(previous.size * 1.2f, 12f) - 1f;
+    }
+
+    /** 行内列簇起始 x（使用统一的单元格间隙判定）。 */
     private static List<Float> clusterStarts(Line l) {
         List<Float> xs = new ArrayList<Float>();
         PageChunk prev = null;
         for (PageChunk c : l.chunks) {
-            if (prev == null || c.x - (prev.x + prev.text.length() * prev.size * 0.55f) > Math.max(prev.size * 1.2f, 12f)) {
+            if (prev == null || startsNewCell(prev, c)) {
                 xs.add(Float.valueOf(c.x));
             }
             prev = c;
@@ -570,7 +556,7 @@ public final class RuleLayoutAnalyzer implements LayoutAnalyzer {
             StringBuilder cell = new StringBuilder();
             PageChunk prev = null;
             for (PageChunk c : l.chunks) {
-                if (prev != null && c.x - (prev.x + prev.text.length() * prev.size * 0.55f) > Math.max(prev.size * 1.2f, 12f)) {
+                if (prev != null && startsNewCell(prev, c)) {
                     cells.add(cell.toString().trim());
                     cell = new StringBuilder();
                 }

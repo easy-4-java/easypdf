@@ -22,6 +22,10 @@ public final class HtmlPdfConverter {
 
     static {
         FONT_PROVIDER.addSystemFonts();
+        String configuredFont = System.getenv("EASYPDF_CJK_FONT");
+        if (configuredFont != null && !configuredFont.trim().isEmpty()) {
+            FONT_PROVIDER.addFont(configuredFont);
+        }
     }
 
     private HtmlPdfConverter() {

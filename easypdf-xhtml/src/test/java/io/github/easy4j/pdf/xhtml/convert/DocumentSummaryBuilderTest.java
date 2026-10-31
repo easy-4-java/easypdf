@@ -26,7 +26,7 @@ class DocumentSummaryBuilderTest {
             + "<h1>总章</h1><p>正文一二三。</p>"
             + "<h2>分章</h2><p>四五六。</p>"
             // 规则引擎仅识别无边框且≥3 行的对齐表（与 StreamTableTest 的已验证夹具一致）
-            + "<table style='border:none'>"
+            + "<table style='border:none; width:400px'>"
             + "<tr><td>列甲</td><td>列乙</td></tr>"
             + "<tr><td>值一</td><td>值二</td></tr>"
             + "<tr><td>值三</td><td>值四</td></tr>"

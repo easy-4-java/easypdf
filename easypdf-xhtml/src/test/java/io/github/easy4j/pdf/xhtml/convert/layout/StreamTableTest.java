@@ -28,7 +28,7 @@ class StreamTableTest {
     @Test
     void borderlessAlignedTableBecomesPipeTable() throws Exception {
         List<PageModel> pages = renderPages(
-            "<html><body><table style='border:none'>"
+            "<html><body><table style='border:none; width:400px'>"
             + "<tr><td>列甲</td><td>列乙</td></tr>"
             + "<tr><td>值一</td><td>值二</td></tr>"
             + "<tr><td>值三</td><td>值四</td></tr>"

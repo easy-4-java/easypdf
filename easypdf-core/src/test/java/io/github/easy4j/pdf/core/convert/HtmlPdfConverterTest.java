@@ -28,6 +28,10 @@ class HtmlPdfConverterTest {
 
     @Test
     void pdfToTextExtractsChineseAndLatin() throws Exception {
+        String cjkFont = System.getenv("EASYPDF_CJK_FONT");
+        if (cjkFont != null) {
+            HtmlPdfConverter.registerFont(cjkFont);
+        }
         File pdf = new File(tempDir, "golden.pdf");
         String html = "<html><body><h1>发票 Invoice</h1><p>金额 amount 128.00</p></body></html>";
         HtmlPdfConverter.htmlToPdf(html, Files.newOutputStream(pdf.toPath()));

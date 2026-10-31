@@ -33,6 +33,35 @@ class RuleLayoutAnalyzerTest {
     }
 
     @Test
+    void alignedThreeLineColumnsRemainIndependent() throws Exception {
+        PageModel page = new PageModel(1);
+        for (int row = 0; row < 3; row++) {
+            page.chunks.add(new PageChunk("左栏第" + row + "行", 50, 700 - row * 20, 12, false, false, 1, -1));
+            page.chunks.add(new PageChunk("右栏第" + row + "行", 220, 700 - row * 20, 12, false, false, 1, -1));
+        }
+        DocumentStructure ds = new RuleLayoutAnalyzer().analyze(
+                Collections.singletonList(page), Collections.<int[]>emptyList(), "t");
+        assertThat(ds.tables).isEmpty();
+        assertThat(ds.fullMarkdown()).containsSubsequence(
+                "左栏第0行", "左栏第1行", "左栏第2行", "右栏第0行", "右栏第1行", "右栏第2行");
+    }
+
+    @Test
+    void multipleFontRunsOnOneBaselineDoNotMergeColumns() throws Exception {
+        PageModel page = new PageModel(1);
+        for (int run = 0; run < 3; run++) {
+            page.chunks.add(new PageChunk("左", 50 + run * 12, 700, 12, run == 1, false, 1, -1));
+            page.chunks.add(new PageChunk("右", 220 + run * 12, 700, 12, run == 1, false, 1, -1));
+        }
+        page.chunks.add(new PageChunk("左栏末行", 50, 680, 12, false, false, 1, -1));
+        page.chunks.add(new PageChunk("右栏末行", 220, 680, 12, false, false, 1, -1));
+        DocumentStructure ds = new RuleLayoutAnalyzer().analyze(
+                Collections.singletonList(page), Collections.<int[]>emptyList(), "t");
+        assertThat(ds.tables).isEmpty();
+        assertThat(ds.fullMarkdown()).containsSubsequence("左左左", "左栏末行", "右右右", "右栏末行");
+    }
+
+    @Test
     void analyzeHandlesEmptyPages() throws Exception {
         RuleLayoutAnalyzer analyzer = new RuleLayoutAnalyzer();
         DocumentStructure ds = analyzer.analyze(null, null, "空");

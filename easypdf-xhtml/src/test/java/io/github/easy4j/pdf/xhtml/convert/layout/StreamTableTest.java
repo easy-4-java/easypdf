@@ -42,6 +42,27 @@ class StreamTableTest {
     }
 
     @Test
+    void autoWidthBorderlessAlignedTableBecomesPipeTable() throws Exception {
+        List<PageModel> pages = renderPages(
+            "<html><body><table style='border:none'>"
+            + "<tr><td>列甲</td><td>列乙</td></tr>"
+            + "<tr><td>值一</td><td>值二</td></tr>"
+            + "<tr><td>值三</td><td>值四</td></tr>"
+            + "</table></body></html>");
+        DocumentStructure ds = new RuleLayoutAnalyzer().analyze(pages, Collections.<int[]>emptyList(), "t");
+        for (PageModel page : pages) {
+            for (PageChunk c : page.chunks) {
+                System.out.println("AUTO_TABLE " + c.text + " x=" + c.x + " y=" + c.y + " size=" + c.size);
+            }
+        }
+        assertThat(ds.tables).isNotEmpty();
+        assertThat(ds.tables.get(0).headers.get(0)).containsExactly("列甲", "列乙");
+        assertThat(ds.tables.get(0).rows).hasSize(2);
+        assertThat(ds.tables.get(0).rows.get(0)).containsExactly("值一", "值二");
+        assertThat(ds.tables.get(0).rows.get(1)).containsExactly("值三", "值四");
+    }
+
+    @Test
     void plainParagraphsNotMisdetectedAsTable() throws Exception {
         List<PageModel> pages = renderPages(
             "<html><body><p>第一段落</p><p>第二段落</p><p>第三段落</p></body></html>");

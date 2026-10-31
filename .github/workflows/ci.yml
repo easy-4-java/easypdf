@@ -75,4 +75,4 @@ jobs:
         with:
           name: cyclonedx-sbom
           path: '**/target/bom.json'
-        retention-days: 14
+          retention-days: 14

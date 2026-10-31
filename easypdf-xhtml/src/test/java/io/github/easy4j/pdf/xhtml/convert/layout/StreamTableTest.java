@@ -33,6 +33,11 @@ class StreamTableTest {
             + "<tr><td>值一</td><td>值二</td></tr>"
             + "<tr><td>值三</td><td>值四</td></tr>"
             + "</table></body></html>");
+        for (PageModel page : pages) {
+            for (PageChunk chunk : page.chunks) {
+                System.out.println("TABLE CHUNK x=" + chunk.x + " y=" + chunk.y + " size=" + chunk.size + " text=" + chunk.text);
+            }
+        }
         DocumentStructure ds = new RuleLayoutAnalyzer().analyze(pages, Collections.<int[]>emptyList(), "t");
         assertThat(ds.tables).isNotEmpty();
         assertThat(ds.tables.get(0).headers.get(0)).containsExactly("列甲", "列乙");
